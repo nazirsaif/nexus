@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, UserRole, AuthContextType } from '../types';
-import { users } from '../data/users';
+import { users } from '../data/users'; // Keep for fallback
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 // Create Auth Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -9,6 +10,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Local storage keys
 const USER_STORAGE_KEY = 'business_nexus_user';
 const RESET_TOKEN_KEY = 'business_nexus_reset_token';
+const TOKEN_STORAGE_KEY = 'business_nexus_token';
+
+// API URL
+const API_URL = 'http://localhost:5000/api';
 
 // Auth Provider Component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -17,73 +22,208 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check for stored user on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const fetchCurrentUser = async () => {
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (token) {
+        try {
+          const response = await axios.get(`${API_URL}/auth/me`, {
+            headers: {
+              'x-auth-token': token
+            }
+          });
+          
+          // Get user data from response
+          const userData = response.data;
+          
+          // Verify user data exists
+          if (!userData || (!userData.role && !userData.userType)) {
+            throw new Error('Invalid user data received');
+          }
+          
+          // Normalize user data - server returns userType but frontend expects role
+          const normalizedUserData = {
+            ...userData,
+            role: userData.role || userData.userType
+          };
+          
+          setUser(normalizedUserData as User);
+          
+          // Set axios default header for all future requests
+          axios.defaults.headers.common['x-auth-token'] = token;
+        } catch (error: unknown) {
+          console.error('Error fetching user:', error);
+          // Clear auth data on error
+          localStorage.removeItem(TOKEN_STORAGE_KEY);
+          localStorage.removeItem(USER_STORAGE_KEY);
+          // Clear axios default header
+          delete axios.defaults.headers.common['x-auth-token'];
+        }
+      }
+      setIsLoading(false);
+    };
+
+    fetchCurrentUser();
+    
+    // Set up interceptor to handle 401 responses (expired or invalid token)
+    const interceptor = axios.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.response && error.response.status === 401) {
+          // Auto logout on 401 Unauthorized
+          localStorage.removeItem(TOKEN_STORAGE_KEY);
+          localStorage.removeItem(USER_STORAGE_KEY);
+          setUser(null);
+          delete axios.defaults.headers.common['x-auth-token'];
+          toast.error('Your session has expired. Please log in again.');
+        }
+        return Promise.reject(error);
+      }
+    );
+    
+    // Clean up interceptor on unmount
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
   }, []);
 
-  // Mock login function - in a real app, this would make an API call
+  // Real login function that makes an API call
   const login = async (email: string, password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
+    console.log('Attempting to login user:', { email, role });
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Log the request being made
+      console.log('Making login request to:', `${API_URL}/auth/login`);
+      console.log('With data:', { email, password: '***', userType: role });
       
-      // Find user with matching email and role
-      const foundUser = users.find(u => u.email === email && u.role === role);
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password,
+        userType: role
+      });
       
-      if (foundUser) {
-        setUser(foundUser);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(foundUser));
-        toast.success('Successfully logged in!');
-      } else {
-        throw new Error('Invalid credentials or user not found');
+      console.log('Login response received:', response.status);
+      console.log('Login response data:', response.data);
+      
+      const { token, user: userData } = response.data;
+      
+      // Verify user data has required fields
+      if (!userData || !userData.id) {
+        throw new Error('Invalid user data received from server');
       }
-    } catch (error) {
-      toast.error((error as Error).message);
-      throw error;
+      
+      // Check if userType is present instead of role (server uses userType)
+      if (!userData.userType && !userData.role) {
+        throw new Error('User role information missing');
+      }
+      
+      // Normalize user data - server returns userType but frontend expects role
+      const normalizedUserData = {
+        ...userData,
+        role: userData.role || userData.userType
+      };
+      
+      // Set user in state with normalized data
+      setUser(normalizedUserData as User);
+      
+      // Store auth data with normalized user data
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUserData));
+      
+      // Set authorization header for future requests
+      axios.defaults.headers.common['x-auth-token'] = token;
+      
+      toast.success('Successfully logged in!');
+    } catch (error: unknown) {
+      console.error('Login error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        console.error('API Error Response:', error.response?.data);
+        console.error('API Error Status:', error.response?.status);
+        
+        const errorMessage = error.response?.data?.message
+          ? error.response.data.message
+          : 'Login failed. Please check your credentials.';
+        
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      } else {
+        console.error('Non-Axios error:', error);
+        toast.error('Login failed. Please check your credentials.');
+        throw new Error('Login failed. Please check your credentials.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mock register function - in a real app, this would make an API call
+  // Real register function that makes an API call
   const register = async (name: string, email: string, password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
+    console.log('Attempting to register user:', { name, email, role });
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Log the request being made
+      console.log('Making signup request to:', `${API_URL}/auth/signup`);
+      console.log('With data:', { name, email, password: '***', userType: role });
       
-      // Check if email already exists
-      if (users.some(u => u.email === email)) {
-        throw new Error('Email already in use');
-      }
-      
-      // Create new user
-      const newUser: User = {
-        id: `${role[0]}${users.length + 1}`,
+      const response = await axios.post(`${API_URL}/auth/signup`, {
         name,
         email,
-        role,
-        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-        bio: '',
-        isOnline: true,
-        createdAt: new Date().toISOString()
+        password,
+        userType: role
+      });
+      
+      console.log('Signup response received:', response.status);
+      console.log('Signup response data:', response.data);
+      
+      const { token, user: userData } = response.data;
+      
+      // Verify user data has required fields
+      if (!userData || !userData.id) {
+        throw new Error('Invalid user data received from server');
+      }
+      
+      // Check if userType is present instead of role (server uses userType)
+      if (!userData.userType && !userData.role) {
+        throw new Error('User role information missing');
+      }
+      
+      // Normalize user data - server returns userType but frontend expects role
+      const normalizedUserData = {
+        ...userData,
+        role: userData.role || userData.userType
       };
       
-      // Add user to mock data
-      users.push(newUser);
+      // Set user in state with normalized data
+      setUser(normalizedUserData as User);
       
-      setUser(newUser);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
+      // Store auth data with normalized user data
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUserData));
+      
+      // Set authorization header for future requests
+      axios.defaults.headers.common['x-auth-token'] = token;
+      
       toast.success('Account created successfully!');
-    } catch (error) {
-      toast.error((error as Error).message);
-      throw error;
+    } catch (error: unknown) {
+      console.error('Registration error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        console.error('API Error Response:', error.response?.data);
+        console.error('API Error Status:', error.response?.status);
+        
+        const errorMessage = error.response?.data?.message
+          ? error.response.data.message
+          : 'Registration failed. Please try again.';
+        
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      } else {
+        console.error('Non-Axios error:', error);
+        toast.error('Registration failed. Please try again.');
+        throw new Error('Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // In a real app, this would send an email
       toast.success('Password reset instructions sent to your email');
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error((error as Error).message);
       throw error;
     }
@@ -128,7 +268,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // In a real app, this would update the user's password in the database
       localStorage.removeItem(RESET_TOKEN_KEY);
       toast.success('Password reset successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error((error as Error).message);
       throw error;
     }
@@ -136,36 +276,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = (): void => {
+    // Clear user state
     setUser(null);
+    
+    // Clear local storage
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    
+    // Clear authorization header
+    delete axios.defaults.headers.common['x-auth-token'];
+    
     toast.success('Logged out successfully');
   };
 
-  // Update user profile
+  // Update user profile using the secure API endpoint
   const updateProfile = async (userId: string, updates: Partial<User>): Promise<void> => {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update user in mock data
-      const userIndex = users.findIndex(u => u.id === userId);
-      if (userIndex === -1) {
-        throw new Error('User not found');
+      // Get token from storage
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!token) {
+        throw new Error('Authentication required');
       }
       
-      const updatedUser = { ...users[userIndex], ...updates };
-      users[userIndex] = updatedUser;
+      // Call the profile update API
+      const response = await axios.put(
+        `${API_URL}/profile`,
+        updates,
+        {
+          headers: {
+            'x-auth-token': token
+          }
+        }
+      );
       
-      // Update current user if it's the same user
-      if (user?.id === userId) {
-        setUser(updatedUser);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
-      }
+      // Get updated user data from response
+      const updatedUser = response.data as User;
+      
+      // Update user in state
+      setUser(updatedUser);
+      
+      // Update local storage
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
       
       toast.success('Profile updated successfully');
-    } catch (error) {
-      toast.error((error as Error).message);
-      throw error;
+    } catch (error: unknown) {
+      console.error('Profile update error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message
+          ? error.response.data.message
+          : 'Failed to update profile. Please try again.';
+        
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      } else {
+        toast.error('Failed to update profile. Please try again.');
+        throw error;
+      }
     }
   };
 

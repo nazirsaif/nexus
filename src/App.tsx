@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { PasswordProvider } from './context/PasswordContext';
+import { Toaster } from 'react-hot-toast';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Layouts
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -33,20 +36,34 @@ import { ChatPage } from './pages/chat/ChatPage';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <PasswordProvider>
+        <Router>
+          <Toaster position="top-right" />
         <Routes>
           {/* Authentication Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* Dashboard Routes */}
+          {/* Dashboard Routes - Protected by role */}
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route path="entrepreneur" element={<EntrepreneurDashboard />} />
-            <Route path="investor" element={<InvestorDashboard />} />
+            <Route path="entrepreneur" element={
+              <ProtectedRoute allowedRoles={['entrepreneur']}>
+                <EntrepreneurDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="investor" element={
+              <ProtectedRoute allowedRoles={['investor']}>
+                <InvestorDashboard />
+              </ProtectedRoute>
+            } />
           </Route>
           
-          {/* Profile Routes */}
-          <Route path="/profile" element={<DashboardLayout />}>
+          {/* Profile Routes - Protected */}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }>
             <Route path="entrepreneur/:id" element={<EntrepreneurProfile />} />
             <Route path="investor/:id" element={<InvestorProfile />} />
           </Route>
@@ -96,7 +113,8 @@ function App() {
           {/* Catch all other routes and redirect to login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </Router>
+          </Router>
+        </PasswordProvider>
     </AuthProvider>
   );
 }

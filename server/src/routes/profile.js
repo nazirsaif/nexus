@@ -6,10 +6,10 @@ const authMiddleware = require('../middleware/auth');
 // Apply auth middleware to all routes in this router
 router.use(authMiddleware);
 
-// Get current user's profile
+// Get current user's profile with extended information
 router.get('/', profileController.getProfile);
 
-// Update user profile
+// Update user profile with extended information
 router.put('/', profileController.updateProfile);
 
 // Change password

@@ -290,7 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Update user profile using the secure API endpoint
-  const updateProfile = async (userId: string, updates: Partial<User>): Promise<void> => {
+  const updateProfile = async (userId: string, updates: Partial<User>, extendedProfileData?: any): Promise<void> => {
     try {
       // Get token from storage
       const token = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -298,10 +298,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Authentication required');
       }
       
+      // Prepare data for API call
+      const profileUpdateData = {
+        ...updates,
+        ...(extendedProfileData || {})
+      };
+      
       // Call the profile update API
       const response = await axios.put(
         `${API_URL}/profile`,
-        updates,
+        profileUpdateData,
         {
           headers: {
             'x-auth-token': token
@@ -336,6 +342,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Get extended profile information
+  const getExtendedProfile = async (): Promise<any> => {
+    try {
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!token || !user) {
+        throw new Error('Not authenticated');
+      }
+      
+      const response = await axios.get(`${API_URL}/profile`, {
+        headers: {
+          'x-auth-token': token
+        }
+      });
+      
+      return response.data.profile;
+    } catch (error) {
+      console.error('Error fetching extended profile:', error);
+      throw error;
+    }
+  };
+  
+  // Update extended profile information
+  const updateExtendedProfile = async (profileData: any): Promise<any> => {
+    try {
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!token || !user) {
+        throw new Error('Not authenticated');
+      }
+      
+      const response = await axios.put(`${API_URL}/profile`, profileData, {
+        headers: {
+          'x-auth-token': token
+        }
+      });
+      
+      toast.success('Profile updated successfully');
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+      throw error;
+    }
+  };
+
   const value = {
     user,
     login,
@@ -344,6 +394,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     forgotPassword,
     resetPassword,
     updateProfile,
+    getExtendedProfile,
+    updateExtendedProfile,
     isAuthenticated: !!user,
     isLoading
   };

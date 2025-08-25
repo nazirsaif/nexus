@@ -119,7 +119,11 @@ export const SettingsPage: React.FC = () => {
               
               <div className="flex justify-end gap-3">
                 <Button variant="outline">Cancel</Button>
-                <Button>Save Changes</Button>
+                <Button 
+                  onClick={() => window.location.href = '/profile/edit'}
+                >
+                  Edit Full Profile
+                </Button>
               </div>
             </CardBody>
           </Card>

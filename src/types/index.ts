@@ -75,7 +75,9 @@ export interface AuthContextType {
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
-  updateProfile: (userId: string, updates: Partial<User>) => Promise<void>;
+  updateProfile: (userId: string, updates: Partial<User>, extendedProfileData?: any) => Promise<void>;
+  getExtendedProfile: () => Promise<any>;
+  updateExtendedProfile: (profileData: any) => Promise<any>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

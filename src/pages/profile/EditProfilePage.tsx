@@ -10,7 +10,7 @@ import { ArrowLeft, Save, Trash } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const EditProfilePage: React.FC = () => {
-  const { user, updateProfile, getExtendedProfile, updateExtendedProfile } = useAuth();
+  const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -49,53 +49,35 @@ export const EditProfilePage: React.FC = () => {
     // Set basic user info
     setName(user.name || '');
     setEmail(user.email || '');
+    setBio(user.bio || '');
+    setLocation(user.location || '');
+    setWebsite(user.website || '');
     
-    // Fetch extended profile
-    const fetchProfile = async () => {
-      try {
-        setIsLoading(true);
-        const profileData = await getExtendedProfile();
-        setProfile(profileData);
-        
-        // Set common fields
-        if (profileData) {
-          setBio(profileData.bio || '');
-          setLocation(profileData.location || '');
-          setWebsite(profileData.website || '');
-          
-          // Set social links
-          if (profileData.social) {
-            setLinkedin(profileData.social.linkedin || '');
-            setTwitter(profileData.social.twitter || '');
-            setInstagram(profileData.social.instagram || '');
-          }
-          
-          // Set role-specific fields
-          if (user.role === 'entrepreneur' && profileData.entrepreneur) {
-            setStartupName(profileData.entrepreneur.startupName || '');
-            setFoundedYear(profileData.entrepreneur.foundedYear?.toString() || '');
-            setPitchSummary(profileData.entrepreneur.pitchSummary || '');
-            setFundingNeeded(profileData.entrepreneur.fundingNeeded || '');
-            setIndustry(profileData.entrepreneur.industry || '');
-            setTeamSize(profileData.entrepreneur.teamSize?.toString() || '');
-          } else if (user.role === 'investor' && profileData.investor) {
-            setInvestmentInterests(profileData.investor.investmentInterests?.join(', ') || '');
-            setInvestmentStage(profileData.investor.investmentStage?.join(', ') || '');
-            setPortfolioCompanies(profileData.investor.portfolioCompanies?.join(', ') || '');
-            setMinimumInvestment(profileData.investor.minimumInvestment || '');
-            setMaximumInvestment(profileData.investor.maximumInvestment || '');
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        toast.error('Failed to load profile data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Set social media links
+    if (user.social) {
+      setLinkedin(user.social.linkedin || '');
+      setTwitter(user.social.twitter || '');
+      setInstagram(user.social.instagram || '');
+    }
     
-    fetchProfile();
-  }, [user, navigate, getExtendedProfile]);
+    // Set role-specific fields
+    if (user.role === 'entrepreneur') {
+      const entrepreneurUser = user as any;
+      setStartupName(entrepreneurUser.startupName || '');
+      setFoundedYear(entrepreneurUser.foundedYear?.toString() || '');
+      setPitchSummary(entrepreneurUser.pitchSummary || '');
+      setFundingNeeded(entrepreneurUser.fundingNeeded || '');
+      setIndustry(entrepreneurUser.industry || '');
+      setTeamSize(entrepreneurUser.teamSize?.toString() || '');
+    } else if (user.role === 'investor') {
+      const investorUser = user as any;
+      setInvestmentInterests(Array.isArray(investorUser.investmentInterests) ? investorUser.investmentInterests.join(', ') : '');
+      setInvestmentStage(Array.isArray(investorUser.investmentStage) ? investorUser.investmentStage.join(', ') : '');
+      setPortfolioCompanies(Array.isArray(investorUser.portfolioCompanies) ? investorUser.portfolioCompanies.join(', ') : '');
+      setMinimumInvestment(investorUser.minimumInvestment || '');
+      setMaximumInvestment(investorUser.maximumInvestment || '');
+    }
+  }, [user, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,16 +87,12 @@ export const EditProfilePage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Prepare basic user updates
-      const userUpdates = {
+      // Prepare profile updates
+      const profileUpdates: Partial<User> = {
         name,
-        email
-      };
-      
-      // Prepare extended profile data
-      const extendedProfileData: any = {
+        email,
         bio,
-        location,
+        ...(location ? { location } : {}),
         website,
         social: {
           linkedin,
@@ -125,26 +103,34 @@ export const EditProfilePage: React.FC = () => {
       
       // Add role-specific data
       if (user.role === 'entrepreneur') {
-        extendedProfileData.entrepreneur = {
+        Object.assign(profileUpdates, {
           startupName,
           foundedYear: foundedYear ? parseInt(foundedYear) : undefined,
           pitchSummary,
           fundingNeeded,
           industry,
           teamSize: teamSize ? parseInt(teamSize) : undefined
-        };
+        });
       } else if (user.role === 'investor') {
-        extendedProfileData.investor = {
+        Object.assign(profileUpdates, {
           investmentInterests: investmentInterests.split(',').map(item => item.trim()).filter(Boolean),
           investmentStage: investmentStage.split(',').map(item => item.trim()).filter(Boolean),
           portfolioCompanies: portfolioCompanies.split(',').map(item => item.trim()).filter(Boolean),
           minimumInvestment,
           maximumInvestment
-        };
+        });
       }
       
-      // Update profile
-      await updateProfile(user.id, userUpdates, extendedProfileData);
+      // Prepare basic user updates with all necessary fields
+      const userUpdates = {
+        name,
+        email,
+        bio,
+        role: user.role
+      };
+      
+      // Update profile with all the data
+      await updateProfile(user.id, userUpdates, profileUpdates);
       toast.success('Profile updated successfully');
       
       // Navigate back to profile page

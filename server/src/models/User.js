@@ -24,6 +24,38 @@ const UserSchema = new mongoose.Schema({
     enum: ['entrepreneur', 'investor'],
     required: true
   },
+  bio: {
+    type: String,
+    default: ''
+  },
+  avatarUrl: {
+    type: String,
+    default: '/default-avatar.png'
+  },
+  location: {
+    type: String
+  },
+  website: {
+    type: String
+  },
+  social: {
+    linkedin: { type: String },
+    twitter: { type: String },
+    instagram: { type: String }
+  },
+  // Entrepreneur specific fields
+  startupName: { type: String },
+  industry: { type: String },
+  pitchSummary: { type: String },
+  fundingNeeded: { type: String },
+  teamSize: { type: Number },
+  foundedYear: { type: Number },
+  // Investor specific fields
+  investmentInterests: { type: [String] },
+  investmentStage: { type: [String] },
+  portfolioCompanies: { type: [String] },
+  minimumInvestment: { type: String },
+  maximumInvestment: { type: String },
   createdAt: {
     type: Date,
     default: Date.now

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MessageCircle, Building2, MapPin, UserCircle, BarChart3, Briefcase } from 'lucide-react';
+import { MessageCircle, Building2, MapPin, UserCircle, BarChart3, Briefcase, Calendar } from 'lucide-react';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
@@ -8,13 +8,22 @@ import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../context/AuthContext';
 import { findUserById } from '../../data/users';
 import { Investor } from '../../types';
+import { ScheduleMeetingButton } from '../../components/meetings/ScheduleMeetingButton';
 
 export const InvestorProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user: currentUser } = useAuth();
   
-  // Fetch investor data
-  const investor = findUserById(id || '') as Investor | null;
+  // Fetch investor data - first check if it's the current user
+  let investor = null;
+  
+  // If the ID matches the current user and they're an investor, use their data
+  if (currentUser && currentUser.id === id && currentUser.role === 'investor') {
+    investor = currentUser as unknown as Investor;
+  } else {
+    // Otherwise look in the static data
+    investor = findUserById(id || '') as Investor | null;
+  }
   
   if (!investor || investor.role !== 'investor') {
     return (
@@ -65,17 +74,24 @@ export const InvestorProfile: React.FC = () => {
           
           <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-2 justify-center sm:justify-end">
             {!isCurrentUser && (
-              <Link to={`/chat/${investor.id}`}>
-                <Button
-                  leftIcon={<MessageCircle size={18} />}
-                >
-                  Message
-                </Button>
-              </Link>
+              <>
+                <Link to={`/chat/${investor.id}`}>
+                  <Button
+                    leftIcon={<MessageCircle size={18} />}
+                  >
+                    Message
+                  </Button>
+                </Link>
+                
+                <ScheduleMeetingButton 
+                  user={investor as any} 
+                  variant="outline"
+                />
+              </>
             )}
             
             {isCurrentUser && (
-              <Link to="/profile/edit">
+              <Link to={`/profile/edit`}>
                 <Button
                   variant="outline"
                   leftIcon={<UserCircle size={18} />}

@@ -7,6 +7,13 @@ export interface User {
   role: UserRole;
   avatarUrl: string;
   bio: string;
+  location?: string;
+  website?: string;
+  social?: {
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
   isOnline?: boolean;
   createdAt: string;
 }
@@ -20,6 +27,12 @@ export interface Entrepreneur extends User {
   location: string;
   foundedYear: number;
   teamSize: number;
+  website?: string;
+  social?: {
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
 }
 
 export interface Investor extends User {
@@ -30,6 +43,13 @@ export interface Investor extends User {
   totalInvestments: number;
   minimumInvestment: string;
   maximumInvestment: string;
+  location?: string;
+  website?: string;
+  social?: {
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
 }
 
 export interface Message {
@@ -68,6 +88,27 @@ export interface Document {
   ownerId: string;
 }
 
+export interface MeetingParticipant {
+  userId: string;
+  userType: UserRole;
+}
+
+export interface Meeting {
+  id: string;
+  title: string;
+  description?: string;
+  participants: MeetingParticipant[];
+  startTime: string;
+  endTime: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  createdBy: string;
+  location?: string;
+  meetingLink?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
@@ -76,8 +117,8 @@ export interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   updateProfile: (userId: string, updates: Partial<User>, extendedProfileData?: any) => Promise<void>;
-  getExtendedProfile: () => Promise<any>;
-  updateExtendedProfile: (profileData: any) => Promise<any>;
+  getExtendedProfile?: () => Promise<any>;
+  updateExtendedProfile?: (profileData: any) => Promise<any>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

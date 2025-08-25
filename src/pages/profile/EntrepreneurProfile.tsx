@@ -9,13 +9,22 @@ import { useAuth } from '../../context/AuthContext';
 import { findUserById } from '../../data/users';
 import { createCollaborationRequest, getRequestsFromInvestor } from '../../data/collaborationRequests';
 import { Entrepreneur } from '../../types';
+import { ScheduleMeetingButton } from '../../components/meetings/ScheduleMeetingButton';
 
 export const EntrepreneurProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user: currentUser } = useAuth();
   
-  // Fetch entrepreneur data
-  const entrepreneur = findUserById(id || '') as Entrepreneur | null;
+  // Fetch entrepreneur data - first check if it's the current user
+  let entrepreneur = null;
+  
+  // If the ID matches the current user and they're an entrepreneur, use their data
+  if (currentUser && currentUser.id === id && currentUser.role === 'entrepreneur') {
+    entrepreneur = currentUser as unknown as Entrepreneur;
+  } else {
+    // Otherwise look in the static data
+    entrepreneur = findUserById(id || '') as Entrepreneur | null;
+  }
   
   if (!entrepreneur || entrepreneur.role !== 'entrepreneur') {
     return (
@@ -103,19 +112,26 @@ export const EntrepreneurProfile: React.FC = () => {
                 </Link>
                 
                 {isInvestor && (
-                  <Button
-                    leftIcon={<Send size={18} />}
-                    disabled={hasRequestedCollaboration}
-                    onClick={handleSendRequest}
-                  >
-                    {hasRequestedCollaboration ? 'Request Sent' : 'Request Collaboration'}
-                  </Button>
+                  <>
+                    <Button
+                      leftIcon={<Send size={18} />}
+                      disabled={hasRequestedCollaboration}
+                      onClick={handleSendRequest}
+                    >
+                      {hasRequestedCollaboration ? 'Request Sent' : 'Request Collaboration'}
+                    </Button>
+                    
+                    <ScheduleMeetingButton 
+                      user={entrepreneur as any} 
+                      variant="outline"
+                    />
+                  </>
                 )}
               </>
             )}
             
             {isCurrentUser && (
-              <Link to="/profile/edit">
+              <Link to={`/profile/edit`}>
                 <Button
                   variant="outline"
                   leftIcon={<UserCircle size={18} />}

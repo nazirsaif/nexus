@@ -3,10 +3,19 @@ const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
   try {
-    // Get token from header or query string or cookies
-    const token = req.header('x-auth-token') || 
-                  req.query.token || 
-                  (req.cookies && req.cookies.token);
+    // Get token from Authorization header, x-auth-token header, query string or cookies
+    let token = req.header('Authorization') || req.header('x-auth-token') || 
+                req.query.token || 
+                (req.cookies && req.cookies.token);
+    
+    // Check if token is in Authorization header with Bearer prefix
+    if (token && token.startsWith('Bearer ')) {
+      // Remove Bearer from string
+      token = token.slice(7).trim();
+    }
+    
+    // Log token for debugging
+    console.log('Token received:', token);
 
     // Check if no token
     if (!token) {

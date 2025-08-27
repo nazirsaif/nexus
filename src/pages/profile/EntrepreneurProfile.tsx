@@ -9,7 +9,6 @@ import { useAuth } from '../../context/AuthContext';
 import { findUserById } from '../../data/users';
 import { createCollaborationRequest, getRequestsFromInvestor } from '../../data/collaborationRequests';
 import { Entrepreneur } from '../../types';
-import { ScheduleMeetingButton } from '../../components/meetings/ScheduleMeetingButton';
 
 export const EntrepreneurProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -112,20 +111,13 @@ export const EntrepreneurProfile: React.FC = () => {
                 </Link>
                 
                 {isInvestor && (
-                  <>
-                    <Button
-                      leftIcon={<Send size={18} />}
-                      disabled={hasRequestedCollaboration}
-                      onClick={handleSendRequest}
-                    >
-                      {hasRequestedCollaboration ? 'Request Sent' : 'Request Collaboration'}
-                    </Button>
-                    
-                    <ScheduleMeetingButton 
-                      user={entrepreneur as any} 
-                      variant="outline"
-                    />
-                  </>
+                  <Button
+                    leftIcon={<Send size={18} />}
+                    disabled={hasRequestedCollaboration}
+                    onClick={handleSendRequest}
+                  >
+                    {hasRequestedCollaboration ? 'Request Sent' : 'Request Collaboration'}
+                  </Button>
                 )}
               </>
             )}

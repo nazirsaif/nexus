@@ -104,9 +104,10 @@ function App() {
             <Route index element={<DealsPage />} />
           </Route>
           
-          {/* Meetings Routes */}
           <Route path="/meetings" element={<DashboardLayout />}>
-            <Route index element={<MeetingsPage />} />
+            <Route index element={<ProtectedRoute>
+              <MeetingsPage />
+            </ProtectedRoute>} />
           </Route>
           
           {/* Chat Routes */}

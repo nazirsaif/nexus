@@ -8,7 +8,8 @@ const authRoutes = require('./routes/auth');
 const entrepreneurRoutes = require('./routes/entrepreneur');
 const investorRoutes = require('./routes/investor');
 const profileRoutes = require('./routes/profile');
-const meetingRoutes = require('./routes/meetingRoutes');
+const meetingsRoutes = require('./routes/meetings');
+const usersRoutes = require('./routes/users');
 
 // Initialize express app
 const app = express();
@@ -25,7 +26,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/entrepreneur', entrepreneurRoutes);
 app.use('/api/investor', investorRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/meetings', meetingRoutes);
+app.use('/api/meetings', meetingsRoutes);
+app.use('/api/users', usersRoutes);
 
 // Default route
 app.get('/', (req, res) => {

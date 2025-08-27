@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MessageCircle, Building2, MapPin, UserCircle, BarChart3, Briefcase, Calendar } from 'lucide-react';
+import { MessageCircle, Building2, MapPin, UserCircle, BarChart3, Briefcase } from 'lucide-react';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
@@ -8,7 +8,6 @@ import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../context/AuthContext';
 import { findUserById } from '../../data/users';
 import { Investor } from '../../types';
-import { ScheduleMeetingButton } from '../../components/meetings/ScheduleMeetingButton';
 
 export const InvestorProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -74,20 +73,13 @@ export const InvestorProfile: React.FC = () => {
           
           <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-2 justify-center sm:justify-end">
             {!isCurrentUser && (
-              <>
-                <Link to={`/chat/${investor.id}`}>
-                  <Button
-                    leftIcon={<MessageCircle size={18} />}
-                  >
-                    Message
-                  </Button>
-                </Link>
-                
-                <ScheduleMeetingButton 
-                  user={investor as any} 
-                  variant="outline"
-                />
-              </>
+              <Link to={`/chat/${investor.id}`}>
+                <Button
+                  leftIcon={<MessageCircle size={18} />}
+                >
+                  Message
+                </Button>
+              </Link>
             )}
             
             {isCurrentUser && (

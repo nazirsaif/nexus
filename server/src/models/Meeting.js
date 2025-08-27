@@ -1,31 +1,26 @@
+
 const mongoose = require('mongoose');
 
-const MeetingSchema = new mongoose.Schema({
+const participantSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'accepted', 'rejected', 'cancelled'],
+    default: 'pending'
+  }
+});
+
+const meetingSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   description: {
-    type: String,
-    trim: true
+    type: String
   },
-  // Store both participants (entrepreneur and investor)
-  participants: [
-    {
-      userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-      },
-      userType: {
-        type: String,
-        enum: ['entrepreneur', 'investor'],
-        required: true
-      }
-    }
-  ],
-  // Meeting date and time
   startTime: {
     type: Date,
     required: true
@@ -34,45 +29,23 @@ const MeetingSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  // Meeting status
-  status: {
-    type: String,
-    enum: ['pending', 'accepted', 'rejected', 'cancelled'],
-    default: 'pending'
+  location: {
+    type: String
   },
-  // Who created the meeting
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+  organizerId: {
+    type: String,
     required: true
   },
-  // Optional location (could be virtual or physical)
-  location: {
+  participants: [participantSchema],
+  status: {
     type: String,
-    default: 'Virtual'
-  },
-  // Optional meeting link for virtual meetings
-  meetingLink: {
-    type: String
-  },
-  // Optional notes
-  notes: {
-    type: String
+    enum: ['scheduled', 'cancelled', 'completed'],
+    default: 'scheduled'
   },
   createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
     type: Date,
     default: Date.now
   }
 });
 
-// Update the updatedAt field before saving
-MeetingSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-module.exports = mongoose.model('Meeting', MeetingSchema);
+module.exports = mongoose.model('Meeting', meetingSchema);

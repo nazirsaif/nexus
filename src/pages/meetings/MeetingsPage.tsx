@@ -24,10 +24,10 @@ export const MeetingsPage: React.FC = () => {
   const fetchMeetings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/meetings', {
+      const response = await fetch('http://localhost:5000/api/meetings', {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
         },
       });
 
@@ -67,10 +67,10 @@ export const MeetingsPage: React.FC = () => {
       // Fetch participant details
       const participantIds = meeting.participants.map((p: any) => p.userId);
       const participantPromises = participantIds.map((id: string) => 
-        fetch(`/api/users/${id}`, {
+        fetch(`http://localhost:5000/api/users/${id}`, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
           },
         }).then(res => res.json())
       );
@@ -90,11 +90,11 @@ export const MeetingsPage: React.FC = () => {
     if (!selectedMeeting) return;
     
     try {
-      const response = await fetch(`/api/meetings/${selectedMeeting.id}`, {
+      const response = await fetch(`http://localhost:5000/api/meetings/${selectedMeeting.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
         },
       });
 
@@ -114,11 +114,11 @@ export const MeetingsPage: React.FC = () => {
     if (!selectedMeeting) return;
     
     try {
-      const response = await fetch(`/api/meetings/${selectedMeeting.id}/status`, {
+      const response = await fetch(`http://localhost:5000/api/meetings/${selectedMeeting.id}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
         },
         body: JSON.stringify({ status }),
       });
@@ -182,7 +182,7 @@ export const MeetingsPage: React.FC = () => {
       {/* Create Meeting Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Schedule New Meeting</h2>
             <CreateMeetingForm 
               onClose={() => setShowCreateModal(false)}
@@ -195,14 +195,16 @@ export const MeetingsPage: React.FC = () => {
       {/* Meeting Details Modal */}
       {selectedMeeting && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <MeetingDetailsModal 
-            meeting={selectedMeeting}
-            onClose={() => setSelectedMeeting(null)}
-            onEdit={() => console.log('Edit meeting')} // To be implemented
-            onDelete={handleDeleteMeeting}
-            onStatusUpdate={handleUpdateMeetingStatus}
-            participants={participants}
-          />
+          <div className="max-h-[80vh] overflow-y-auto">
+            <MeetingDetailsModal 
+              meeting={selectedMeeting}
+              onClose={() => setSelectedMeeting(null)}
+              onEdit={() => console.log('Edit meeting')} // To be implemented
+              onDelete={handleDeleteMeeting}
+              onStatusUpdate={handleUpdateMeetingStatus}
+              participants={participants}
+            />
+          </div>
         </div>
       )}
     </div>

@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { Meeting, User } from '../../types';
+import React from 'react';
 import { Button } from '../ui/Button';
-import { Calendar, Clock, MapPin, Video, Edit, Trash2, Check, X } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import moment from 'moment';
+import { User, Meeting } from '../../types';
+import { Calendar, Clock, MapPin, Users, X } from 'lucide-react';
 
 interface MeetingDetailsModalProps {
   meeting: Meeting;
@@ -20,178 +18,125 @@ export const MeetingDetailsModal: React.FC<MeetingDetailsModalProps> = ({
   onEdit,
   onDelete,
   onStatusUpdate,
-  participants
+  participants,
 }) => {
-  const { user } = useAuth();
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  const isCreator = user?.id === meeting.createdBy;
-  const isPending = meeting.status === 'pending';
-  const isParticipant = !isCreator && meeting.participants.some(p => p.userId === user?.id);
-
   const formatDate = (dateString: string) => {
-    return moment(dateString).format('dddd, MMMM D, YYYY');
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   const formatTime = (dateString: string) => {
-    return moment(dateString).format('h:mm A');
-  };
-
-  const getStatusBadgeClass = () => {
-    switch (meeting.status) {
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-yellow-100 text-yellow-800';
-    }
-  };
-
-  const handleDelete = async () => {
-    if (isConfirmingDelete) {
-      onDelete();
-    } else {
-      setIsConfirmingDelete(true);
-    }
-  };
-
-  const handleStatusUpdate = async (status: 'accepted' | 'rejected' | 'cancelled') => {
-    setIsUpdatingStatus(true);
-    await onStatusUpdate(status);
-    setIsUpdatingStatus(false);
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
       <div className="flex justify-between items-start mb-4">
-        <h2 className="text-xl font-bold">{meeting.title}</h2>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass()}`}>
-          {meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1)}
-        </span>
+        <h2 className="text-xl font-bold text-gray-900">{meeting.title}</h2>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-500"
+          aria-label="Close"
+        >
+          <X size={20} />
+        </button>
       </div>
 
-      {meeting.description && (
-        <p className="text-gray-600 mb-4">{meeting.description}</p>
-      )}
+      <div className="space-y-4 mb-6">
+        {meeting.description && (
+          <p className="text-gray-700">{meeting.description}</p>
+        )}
 
-      <div className="space-y-3 mb-6">
-        <div className="flex items-center">
-          <Calendar size={16} className="text-gray-500 mr-2" />
-          <span className="text-sm">{formatDate(meeting.startTime)}</span>
+        <div className="flex items-start">
+          <Calendar size={18} className="text-gray-500 mt-0.5 mr-2" />
+          <div>
+            <p className="text-gray-900 font-medium">{formatDate(meeting.startTime)}</p>
+          </div>
         </div>
-        
-        <div className="flex items-center">
-          <Clock size={16} className="text-gray-500 mr-2" />
-          <span className="text-sm">
-            {formatTime(meeting.startTime)} - {formatTime(meeting.endTime)}
-          </span>
+
+        <div className="flex items-start">
+          <Clock size={18} className="text-gray-500 mt-0.5 mr-2" />
+          <div>
+            <p className="text-gray-900">
+              {formatTime(meeting.startTime)} - {formatTime(meeting.endTime)}
+            </p>
+          </div>
         </div>
-        
+
         {meeting.location && (
-          <div className="flex items-center">
-            <MapPin size={16} className="text-gray-500 mr-2" />
-            <span className="text-sm">{meeting.location}</span>
+          <div className="flex items-start">
+            <MapPin size={18} className="text-gray-500 mt-0.5 mr-2" />
+            <p className="text-gray-900">{meeting.location}</p>
           </div>
         )}
-        
-        {meeting.meetingLink && (
-          <div className="flex items-center">
-            <Video size={16} className="text-gray-500 mr-2" />
-            <a 
-              href={meeting.meetingLink} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-primary-600 hover:underline"
-            >
-              Join Meeting
-            </a>
-          </div>
-        )}
-      </div>
 
-      <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Participants</h3>
-        <div className="space-y-2">
-          {participants.map((participant) => (
-            <div key={participant.id} className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-                {participant.avatarUrl ? (
-                  <img 
-                    src={participant.avatarUrl} 
-                    alt={participant.name} 
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <span className="text-xs font-medium">
-                    {participant.name.charAt(0)}
-                  </span>
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-medium">{participant.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{participant.role}</p>
-              </div>
+        <div className="flex items-start">
+          <Users size={18} className="text-gray-500 mt-0.5 mr-2" />
+          <div>
+            <p className="text-gray-900 font-medium mb-1">Participants</p>
+            <div className="space-y-2">
+              {participants.length > 0 ? (
+                participants.map((participant) => (
+                  <div key={participant.id} className="flex items-center">
+                    <div
+                      className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2"
+                    >
+                      {participant.avatarUrl ? (
+                        <img
+                          src={participant.avatarUrl}
+                          alt={participant.name}
+                          className="w-8 h-8 rounded-full"
+                        />
+                      ) : (
+                        <span className="text-xs font-medium text-gray-600">
+                          {participant.name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-gray-900">{participant.name}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm">Loading participants...</p>
+              )}
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
-      <div className="border-t border-gray-200 pt-4">
-        {isCreator ? (
-          <div className="flex justify-between">
-            <div>
-              <Button 
-                variant="outline" 
-                leftIcon={<Edit size={16} />}
-                onClick={onEdit}
-                className="mr-2"
-              >
-                Edit
-              </Button>
-              <Button 
-                variant="outline" 
-                leftIcon={<Trash2 size={16} />}
-                onClick={handleDelete}
-                className="text-red-600 border-red-200 hover:bg-red-50"
-              >
-                {isConfirmingDelete ? 'Confirm' : 'Cancel'}
-              </Button>
-            </div>
-            <Button onClick={onClose}>Close</Button>
-          </div>
-        ) : isParticipant && isPending ? (
-          <div className="flex justify-between">
-            <div>
-              <Button 
-                variant="outline" 
-                leftIcon={<Check size={16} />}
-                onClick={() => handleStatusUpdate('accepted')}
-                className="mr-2 text-green-600 border-green-200 hover:bg-green-50"
-                disabled={isUpdatingStatus}
-              >
-                Accept
-              </Button>
-              <Button 
-                variant="outline" 
-                leftIcon={<X size={16} />}
-                onClick={() => handleStatusUpdate('rejected')}
-                className="text-red-600 border-red-200 hover:bg-red-50"
-                disabled={isUpdatingStatus}
-              >
-                Decline
-              </Button>
-            </div>
-            <Button onClick={onClose}>Close</Button>
-          </div>
-        ) : (
-          <div className="flex justify-end">
-            <Button onClick={onClose}>Close</Button>
-          </div>
-        )}
+      <div className="border-t border-gray-200 pt-4 space-y-3">
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onEdit}>
+            Edit
+          </Button>
+          <Button variant="outline" onClick={onDelete}>
+            Delete
+          </Button>
+        </div>
+
+        <div className="flex justify-between">
+          <Button
+            variant="success"
+            onClick={() => onStatusUpdate('accepted')}
+          >
+            Accept
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onStatusUpdate('rejected')}
+          >
+            Decline
+          </Button>
+        </div>
       </div>
     </div>
   );

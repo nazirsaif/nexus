@@ -88,25 +88,16 @@ export interface Document {
   ownerId: string;
 }
 
-export interface MeetingParticipant {
-  userId: string;
-  userType: UserRole;
-}
-
 export interface Meeting {
   id: string;
   title: string;
   description?: string;
-  participants: MeetingParticipant[];
   startTime: string;
   endTime: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
-  createdBy: string;
   location?: string;
-  meetingLink?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  organizerId: string;
+  participants: { userId: string; status: 'pending' | 'accepted' | 'rejected' | 'cancelled' }[];
+  status?: 'scheduled' | 'cancelled' | 'completed';
 }
 
 export interface AuthContextType {

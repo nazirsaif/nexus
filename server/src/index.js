@@ -13,6 +13,7 @@ const profileRoutes = require('./routes/profile');
 const meetingsRoutes = require('./routes/meetings');
 const usersRoutes = require('./routes/users');
 const videoCallRoutes = require('./routes/videoCalls');
+const documentRoutes = require('./routes/documents');
 
 // Initialize express app and HTTP server
 const app = express();
@@ -28,6 +29,9 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
+// Serve static files for uploads
+app.use('/uploads', express.static('uploads'));
+
 // Connect to MongoDB
 connectDB();
 
@@ -39,6 +43,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/meetings', meetingsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/video-calls', videoCallRoutes);
+app.use('/api/documents', documentRoutes);
 
 // Default route
 app.get('/', (req, res) => {

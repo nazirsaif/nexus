@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { Meeting } from '../../types';
 
 interface CreateMeetingFormProps {
   onClose: () => void;
   onSuccess: () => void;
+  initialData?: Meeting;
 }
 
-export const CreateMeetingForm: React.FC<CreateMeetingFormProps> = ({ onClose, onSuccess }) => {
+export const CreateMeetingForm: React.FC<CreateMeetingFormProps> = ({ onClose, onSuccess, initialData }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,6 +22,24 @@ export const CreateMeetingForm: React.FC<CreateMeetingFormProps> = ({ onClose, o
     participants: [] as string[],
     location: '',
   });
+
+  // Populate form with initial data when editing
+  useEffect(() => {
+    if (initialData) {
+      const startDate = new Date(initialData.startTime);
+      const endDate = new Date(initialData.endTime);
+      
+      setFormData({
+        title: initialData.title,
+        description: initialData.description || '',
+        date: startDate.toISOString().split('T')[0],
+        startTime: startDate.toISOString().split('T')[1].slice(0, 5),
+        endTime: endDate.toISOString().split('T')[1].slice(0, 5),
+        participants: initialData.participants.map(p => p.userId),
+        location: initialData.location || '',
+      });
+    }
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -36,12 +56,35 @@ export const CreateMeetingForm: React.FC<CreateMeetingFormProps> = ({ onClose, o
       setIsLoading(true);
       setError('');
       
+      // Validate form data
+      if (!formData.date || !formData.startTime || !formData.endTime) {
+        setError('Please fill in all required fields including date and time.');
+        return;
+      }
+
       // Format date and time for API
-      const startDateTime = new Date(`${formData.date}T${formData.startTime}`);
-      const endDateTime = new Date(`${formData.date}T${formData.endTime}`);
+      const startDateTime = new Date(`${formData.date}T${formData.startTime}:00`);
+      const endDateTime = new Date(`${formData.date}T${formData.endTime}:00`);
       
-      const response = await fetch('http://localhost:5000/api/meetings', {
-        method: 'POST',
+      // Validate that dates are valid
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        setError('Invalid date or time format. Please check your inputs.');
+        return;
+      }
+      
+      // Validate that end time is after start time
+      if (endDateTime <= startDateTime) {
+        setError('End time must be after start time.');
+        return;
+      }
+      
+      const isEditing = !!initialData;
+      const url = isEditing 
+        ? `http://localhost:5000/api/meetings/${initialData.id}`
+        : 'http://localhost:5000/api/meetings';
+      
+      const response = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
@@ -53,19 +96,32 @@ export const CreateMeetingForm: React.FC<CreateMeetingFormProps> = ({ onClose, o
           endTime: endDateTime.toISOString(),
           location: formData.location,
           participants: formData.participants,
-          organizerId: user?.id,
+          ...(isEditing ? {} : { organizerId: user?.id }),
         }),
       });
-
       if (!response.ok) {
-        throw new Error('Failed to create meeting');
+        const errorData = await response.json();
+        
+        // Handle conflict errors specifically
+        if (response.status === 409) {
+          const conflictMessage = errorData.conflicts 
+            ? `${errorData.message}\n\nConflicting meetings:\n${errorData.conflicts.map((c: any) => `• ${c.title} (${new Date(c.startTime).toLocaleString()} - ${new Date(c.endTime).toLocaleString()})`).join('\n')}`
+            : errorData.message;
+          setError(conflictMessage);
+          return;
+        }
+        
+        throw new Error(errorData.message || 'Failed to create meeting');
       }
 
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error creating meeting:', error);
-      setError('Failed to create meeting. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (!errorMessage.includes('conflict')) {
+        setError('Failed to create meeting. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +233,7 @@ export const CreateMeetingForm: React.FC<CreateMeetingFormProps> = ({ onClose, o
             type="submit"
             isLoading={isLoading}
           >
-            Create Meeting
+            {initialData ? 'Update Meeting' : 'Create Meeting'}
           </Button>
         </div>
       </form>

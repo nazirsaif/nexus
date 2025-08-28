@@ -20,6 +20,7 @@ export const MeetingsPage: React.FC = () => {
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [participants, setParticipants] = useState<User[]>([]);
   const [error, setError] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchMeetings = async () => {
     try {
@@ -36,7 +37,12 @@ export const MeetingsPage: React.FC = () => {
       }
 
       const data = await response.json();
-      setMeetings(data);
+      // Map MongoDB _id to id for frontend compatibility
+      const mappedMeetings = data.map((meeting: any) => ({
+        ...meeting,
+        id: meeting._id || meeting.id
+      }));
+      setMeetings(mappedMeetings);
     } catch (error) {
       console.error('Error fetching meetings:', error);
       setError('Failed to load meetings. Please try again.');
@@ -86,6 +92,12 @@ export const MeetingsPage: React.FC = () => {
     fetchMeetings();
   };
 
+  const handleEditMeetingSuccess = () => {
+    setShowEditModal(false);
+    setSelectedMeeting(null);
+    fetchMeetings();
+  };
+
   const handleDeleteMeeting = async () => {
     if (!selectedMeeting) return;
     
@@ -114,24 +126,52 @@ export const MeetingsPage: React.FC = () => {
     if (!selectedMeeting) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/meetings/${selectedMeeting.id}/status`, {
-        method: 'PATCH',
+      let endpoint = '';
+      let method = 'PATCH';
+      let body = null;
+
+      // Use dedicated endpoints for accept/reject, generic status endpoint for others
+      if (status === 'accepted') {
+        endpoint = `http://localhost:5000/api/meetings/${selectedMeeting.id}/accept`;
+      } else if (status === 'rejected') {
+        endpoint = `http://localhost:5000/api/meetings/${selectedMeeting.id}/reject`;
+      } else {
+        endpoint = `http://localhost:5000/api/meetings/${selectedMeeting.id}/status`;
+        body = JSON.stringify({ status });
+      }
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
         },
-        body: JSON.stringify({ status }),
+        ...(body && { body }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update meeting status');
+        const errorData = await response.json();
+        
+        // Handle conflict errors specifically
+        if (response.status === 409) {
+          const conflictMessage = errorData.conflicts 
+            ? `${errorData.message}\n\nConflicting meetings:\n${errorData.conflicts.map((c: any) => `• ${c.title} (${new Date(c.startTime).toLocaleString()} - ${new Date(c.endTime).toLocaleString()})`).join('\n')}`
+            : errorData.message;
+          setError(conflictMessage);
+          return;
+        }
+        
+        throw new Error(errorData.message || 'Failed to update meeting status');
       }
 
       setSelectedMeeting(null);
       fetchMeetings();
     } catch (error) {
       console.error('Error updating meeting status:', error);
-      setError('Failed to update meeting status. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (!errorMessage.includes('conflict')) {
+        setError('Failed to update meeting status. Please try again.');
+      }
     }
   };
 
@@ -199,10 +239,24 @@ export const MeetingsPage: React.FC = () => {
             <MeetingDetailsModal 
               meeting={selectedMeeting}
               onClose={() => setSelectedMeeting(null)}
-              onEdit={() => console.log('Edit meeting')} // To be implemented
+              onEdit={() => setShowEditModal(true)}
               onDelete={handleDeleteMeeting}
               onStatusUpdate={handleUpdateMeetingStatus}
               participants={participants}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Meeting Modal */}
+      {showEditModal && selectedMeeting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Edit Meeting</h2>
+            <CreateMeetingForm 
+              onClose={() => setShowEditModal(false)}
+              onSuccess={handleEditMeetingSuccess}
+              initialData={selectedMeeting}
             />
           </div>
         </div>

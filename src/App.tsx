@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PasswordProvider } from './context/PasswordContext';
+import { VideoCallProvider } from './context/VideoCallContext';
 import { Toaster } from 'react-hot-toast';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
@@ -35,12 +36,17 @@ import { MeetingsPage } from './pages/meetings/MeetingsPage';
 // Chat Pages
 import { ChatPage } from './pages/chat/ChatPage';
 
+// Video Call Pages
+import { VideoCallRoom } from './components/video/VideoCallRoom';
+import { VideoCallsPage } from './pages/video/VideoCallsPage';
+
 function App() {
   return (
     <AuthProvider>
       <PasswordProvider>
-        <Router>
-          <Toaster position="top-right" />
+        <VideoCallProvider>
+          <Router>
+            <Toaster position="top-right" />
         <Routes>
           {/* Authentication Routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -110,11 +116,24 @@ function App() {
             </ProtectedRoute>} />
           </Route>
           
+          <Route path="/video-calls" element={<DashboardLayout />}>
+            <Route index element={<ProtectedRoute>
+              <VideoCallsPage />
+            </ProtectedRoute>} />
+          </Route>
+          
           {/* Chat Routes */}
           <Route path="/chat" element={<DashboardLayout />}>
             <Route index element={<ChatPage />} />
             <Route path=":userId" element={<ChatPage />} />
           </Route>
+          
+          {/* Video Call Routes */}
+          <Route path="/video-call/:roomId" element={
+            <ProtectedRoute>
+              <VideoCallRoom />
+            </ProtectedRoute>
+          } />
           
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -123,7 +142,8 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
           </Router>
-        </PasswordProvider>
+        </VideoCallProvider>
+      </PasswordProvider>
     </AuthProvider>
   );
 }

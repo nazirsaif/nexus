@@ -14,6 +14,7 @@ const meetingsRoutes = require('./routes/meetings');
 const usersRoutes = require('./routes/users');
 const videoCallRoutes = require('./routes/videoCalls');
 const documentRoutes = require('./routes/documents');
+const paymentRoutes = require('./routes/payments');
 
 // Initialize express app and HTTP server
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/meetings', meetingsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/video-calls', videoCallRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Default route
 app.get('/', (req, res) => {

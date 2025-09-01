@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Plus, Calendar as CalendarIcon, AlertCircle } from 'lucide-react';
 import { CreateMeetingForm } from '../../components/meetings/CreateMeetingForm';
 import { MeetingDetailsModal } from '../../components/meetings/MeetingDetailsModal';
+import { API_URL } from '../../config/api';
 
 // Setup the localizer for the calendar
 const localizer = momentLocalizer(moment);
@@ -25,7 +26,7 @@ export const MeetingsPage: React.FC = () => {
   const fetchMeetings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/meetings', {
+      const response = await fetch(`${API_URL}/meetings`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
@@ -73,7 +74,7 @@ export const MeetingsPage: React.FC = () => {
       // Fetch participant details
       const participantIds = meeting.participants.map((p: any) => p.userId);
       const participantPromises = participantIds.map((id: string) => 
-        fetch(`http://localhost:5000/api/users/${id}`, {
+        fetch(`${API_URL}/users/${id}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('business_nexus_token')}`,
@@ -102,7 +103,7 @@ export const MeetingsPage: React.FC = () => {
     if (!selectedMeeting) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/meetings/${selectedMeeting.id}`, {
+      const response = await fetch(`${API_URL}/meetings/${selectedMeeting.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -132,11 +133,11 @@ export const MeetingsPage: React.FC = () => {
 
       // Use dedicated endpoints for accept/reject, generic status endpoint for others
       if (status === 'accepted') {
-        endpoint = `http://localhost:5000/api/meetings/${selectedMeeting.id}/accept`;
+        endpoint = `${API_URL}/meetings/${selectedMeeting.id}/accept`;
       } else if (status === 'rejected') {
-        endpoint = `http://localhost:5000/api/meetings/${selectedMeeting.id}/reject`;
+        endpoint = `${API_URL}/meetings/${selectedMeeting.id}/reject`;
       } else {
-        endpoint = `http://localhost:5000/api/meetings/${selectedMeeting.id}/status`;
+        endpoint = `${API_URL}/meetings/${selectedMeeting.id}/status`;
         body = JSON.stringify({ status });
       }
 

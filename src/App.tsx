@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { PasswordProvider } from './context/PasswordContext';
 import { VideoCallProvider } from './context/VideoCallContext';
 import { Toaster } from 'react-hot-toast';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
 
 // Layouts
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -53,26 +53,15 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* Dashboard Routes - Protected by role */}
+          {/* Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route path="entrepreneur" element={
-              <ProtectedRoute allowedRoles={['entrepreneur']}>
-                <EntrepreneurDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="investor" element={
-              <ProtectedRoute allowedRoles={['investor']}>
-                <InvestorDashboard />
-              </ProtectedRoute>
-            } />
+            <Route index element={<EntrepreneurDashboard />} />
+            <Route path="entrepreneur" element={<EntrepreneurDashboard />} />
+            <Route path="investor" element={<InvestorDashboard />} />
           </Route>
           
-          {/* Profile Routes - Protected */}
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
+          {/* Profile Routes */}
+          <Route path="/profile" element={<DashboardLayout />}>
             <Route path="entrepreneur/:id" element={<EntrepreneurProfile />} />
             <Route path="investor/:id" element={<InvestorProfile />} />
             <Route path="edit" element={<EditProfilePage />} />
@@ -112,21 +101,15 @@ function App() {
           </Route>
           
           <Route path="/payments" element={<DashboardLayout />}>
-            <Route index element={<ProtectedRoute>
-              <PaymentsPage />
-            </ProtectedRoute>} />
+            <Route index element={<PaymentsPage />} />
           </Route>
           
           <Route path="/meetings" element={<DashboardLayout />}>
-            <Route index element={<ProtectedRoute>
-              <MeetingsPage />
-            </ProtectedRoute>} />
+            <Route index element={<MeetingsPage />} />
           </Route>
           
           <Route path="/video-calls" element={<DashboardLayout />}>
-            <Route index element={<ProtectedRoute>
-              <VideoCallsPage />
-            </ProtectedRoute>} />
+            <Route index element={<VideoCallsPage />} />
           </Route>
           
           {/* Chat Routes */}
@@ -136,11 +119,7 @@ function App() {
           </Route>
           
           {/* Video Call Routes */}
-          <Route path="/video-call/:roomId" element={
-            <ProtectedRoute>
-              <VideoCallRoom />
-            </ProtectedRoute>
-          } />
+          <Route path="/video-call/:roomId" element={<VideoCallRoom />} />
           
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />

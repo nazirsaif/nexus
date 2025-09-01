@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, FileText, Image, File } from 'lucide-react';
+import { API_URL } from '../../config/api';
 
 interface DocumentUploadProps {
   onClose?: () => void;
@@ -105,7 +106,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         formDataObj.append('isPublic', formData.isPublic.toString());
         if (formData.tags) formDataObj.append('tags', formData.tags);
 
-        const response = await fetch('http://localhost:5000/api/documents/upload-multiple', {
+        const response = await fetch(`${API_URL}/documents/upload-multiple`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -132,7 +133,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           formDataObj.append('isPublic', formData.isPublic.toString());
           if (formData.tags) formDataObj.append('tags', formData.tags);
 
-          const response = await fetch('http://localhost:5000/api/documents/upload', {
+          const response = await fetch(`${API_URL}/documents/upload`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`

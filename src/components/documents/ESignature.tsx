@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { X, Save, RotateCcw, Download } from 'lucide-react';
+import { API_URL } from '../../config/api';
 
 interface ESignatureProps {
   document: {
@@ -109,7 +110,7 @@ const ESignature: React.FC<ESignatureProps> = ({ document, onClose, onSignatureA
           throw new Error('No authentication token found');
         }
 
-        const response = await fetch(`http://localhost:5000/api/documents/${document._id}/sign`, {
+        const response = await fetch(`${API_URL}/documents/${document._id}/sign`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`

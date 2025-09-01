@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Send, DollarSign, X, User as UserIcon, Search } from 'lucide-react';
+import { Send, DollarSign, X, Search, User as UserIcon, AlertTriangle } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card, CardBody } from '../ui/Card';
+import { API_URL } from '../../config/api';
+
 import { useAuth } from '../../context/AuthContext';
 import { User } from '../../types';
 
@@ -42,9 +44,9 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, o
     setSearching(true);
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch(`/api/users/search?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`${API_URL}/users/search?email=${encodeURIComponent(email)}`, {
         headers: token ? {
-          'x-auth-token': token
+          'Authorization': `Bearer ${token}`
         } : {}
       });
       
@@ -109,11 +111,15 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, o
 
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch('/api/payments/transfer', {
+      console.log('🔍 [TransferModal] Starting transfer request...');
+      console.log('🔍 [TransferModal] Token exists:', !!token);
+      console.log('🔍 [TransferModal] Request URL:', `${API_URL}/payments/transfer`);
+      
+      const response = await fetch(`${API_URL}/payments/transfer`, {
         method: 'POST',
         headers: token ? {
           'Content-Type': 'application/json',
-          'x-auth-token': token
+          'Authorization': `Bearer ${token}`
         } : {
           'Content-Type': 'application/json'
         },
@@ -123,8 +129,12 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, o
           description: description || `Transfer to ${selectedRecipient.name}`
         })
       });
+      
+      console.log('🔍 [TransferModal] Response status:', response.status);
+      console.log('🔍 [TransferModal] Response ok:', response.ok);
 
       const data = await response.json();
+      console.log('🔍 [TransferModal] Response data:', data);
 
       if (response.ok) {
         onSuccess();
@@ -136,6 +146,12 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, o
         setLoading(false);
       }
     } catch (error) {
+      console.error('❌ [TransferModal] Network error:', error);
+      console.error('❌ [TransferModal] Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown Error',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setError('Network error. Please try again.');
       setLoading(false);
     }

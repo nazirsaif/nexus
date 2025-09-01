@@ -2,9 +2,7 @@ import React, { createContext, useContext } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
-
-// API URL
-const API_URL = 'http://localhost:5000/api';
+import { API_URL } from '../config/api';
 
 // Define the context type
 interface PasswordContextType {
@@ -38,7 +36,7 @@ export const PasswordProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         { currentPassword, newPassword },
         {
           headers: {
-            'x-auth-token': token
+            'Authorization': `Bearer ${token}`
           }
         }
       );

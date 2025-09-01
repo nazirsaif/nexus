@@ -3,6 +3,8 @@ import { CreditCard, ArrowUpCircle, ArrowDownCircle, Send, History, DollarSign }
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { API_URL } from '../../config/api';
+
 import { useAuth } from '../../context/AuthContext';
 import { DepositModal } from '../../components/payments/DepositModal';
 import { WithdrawModal } from '../../components/payments/WithdrawModal';
@@ -42,9 +44,9 @@ export const PaymentsPage: React.FC = () => {
   const fetchTransactions = async () => {
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch('/api/payments/transactions', {
+      const response = await fetch(`${API_URL}/payments/transactions`, {
         headers: token ? {
-          'x-auth-token': token
+          'Authorization': `Bearer ${token}`
         } : {}
       });
       

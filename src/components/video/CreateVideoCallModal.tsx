@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config/api';
 
 interface CreateVideoCallModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export const CreateVideoCallModal: React.FC<CreateVideoCallModalProps> = ({
 
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch('http://localhost:5000/api/video-calls', {
+      const response = await fetch(`${API_URL}/video-calls`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

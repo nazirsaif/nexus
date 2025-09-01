@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Eye, Trash2, Share2, Edit, Filter, Search, Calendar, User, Tag, PenTool, CheckCircle } from 'lucide-react';
+import { API_URL } from '../../config/api';
 
 interface Document {
   _id: string;
@@ -85,7 +86,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
       queryParams.append('page', filters.page.toString());
       queryParams.append('limit', filters.limit.toString());
 
-      const response = await fetch(`http://localhost:5000/api/documents?${queryParams}`, {
+      const response = await fetch(`${API_URL}/documents?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -136,7 +137,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
+      const response = await fetch(`${API_URL}/documents/${documentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -163,7 +164,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/documents/${document._id}/download`, {
+      const response = await fetch(`${API_URL}/documents/${document._id}/download`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

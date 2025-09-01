@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Lock, Bell, Globe, Palette, CreditCard } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -6,11 +6,62 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
+import { API_URL } from '../../config/api';
 
 export const SettingsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const [isToggling2FA, setIsToggling2FA] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
   
   if (!user) return null;
+
+  const handle2FAToggle = async () => {
+    setIsToggling2FA(true);
+    try {
+      const token = localStorage.getItem('business_nexus_token');
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/auth/2fa/toggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          enable: !user.twoFactorEnabled,
+          otpCode: otpCode || undefined
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (!user.twoFactorEnabled && !otpCode) {
+          // First step: OTP sent
+          setShowOtpInput(true);
+          toast.success(data.message);
+        } else {
+          // 2FA toggled successfully
+          updateUser({ ...user, twoFactorEnabled: !user.twoFactorEnabled });
+          setShowOtpInput(false);
+          setOtpCode('');
+          toast.success(data.message);
+        }
+      } else {
+        toast.error(data.message || 'Failed to toggle 2FA');
+      }
+    } catch (error) {
+      console.error('2FA toggle error:', error);
+      toast.error('Failed to toggle 2FA. Please try again.');
+    } finally {
+      setIsToggling2FA(false);
+    }
+  };
   
   return (
     <div className="space-y-6 animate-fade-in">
@@ -67,7 +118,7 @@ export const SettingsPage: React.FC = () => {
             <CardBody className="space-y-6">
               <div className="flex items-center gap-6">
                 <Avatar
-                  src={user.avatarUrl}
+                  src={user.avatarUrl || ''}
                   alt={user.name}
                   size="xl"
                 />
@@ -132,14 +183,55 @@ export const SettingsPage: React.FC = () => {
             <CardBody className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-900 mb-4">Two-Factor Authentication</h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">
-                      Add an extra layer of security to your account
-                    </p>
-                    <Badge variant="error" className="mt-1">Not Enabled</Badge>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">
+                        Add an extra layer of security to your account
+                      </p>
+                      <Badge 
+                        variant={user.twoFactorEnabled ? "success" : "error"} 
+                        className="mt-1"
+                      >
+                        {user.twoFactorEnabled ? "Enabled" : "Not Enabled"}
+                      </Badge>
+                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={handle2FAToggle}
+                      isLoading={isToggling2FA}
+                      disabled={isToggling2FA}
+                    >
+                      {user.twoFactorEnabled ? "Disable" : "Enable"}
+                    </Button>
                   </div>
-                  <Button variant="outline">Enable</Button>
+                  
+                  {showOtpInput && (
+                    <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+                      <p className="text-sm text-blue-800 mb-3">
+                        We've sent a verification code to your email. Please enter it below to enable 2FA.
+                      </p>
+                      <div className="flex gap-3">
+                        <Input
+                          label="Verification Code"
+                          type="text"
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value)}
+                          placeholder="Enter 6-digit code"
+                          maxLength={6}
+                        />
+                        <div className="flex items-end">
+                          <Button 
+                            onClick={handle2FAToggle}
+                            isLoading={isToggling2FA}
+                            disabled={!otpCode || otpCode.length !== 6}
+                          >
+                            Verify
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               

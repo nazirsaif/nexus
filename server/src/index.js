@@ -5,10 +5,18 @@ const cors = require('cors');
 require('dotenv').config();
 const connectDB = require('./config/db');
 
+// Import security middleware
+const { 
+  helmetConfig, 
+  corsOptions, 
+  generalLimiter,
+  sanitizeRequest,
+  preventXSS,
+  securityLogger 
+} = require('./middleware/security');
+
 // Import routes
 const authRoutes = require('./routes/auth');
-const entrepreneurRoutes = require('./routes/entrepreneur');
-const investorRoutes = require('./routes/investor');
 const profileRoutes = require('./routes/profile');
 const meetingsRoutes = require('./routes/meetings');
 const usersRoutes = require('./routes/users');
@@ -26,9 +34,17 @@ const io = socketIo(server, {
   }
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Security middleware (apply first)
+app.use(helmetConfig);
+app.use(securityLogger);
+app.use(cors(corsOptions));
+app.use(generalLimiter);
+app.use(preventXSS);
+app.use(sanitizeRequest);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files for uploads
 app.use('/uploads', express.static('uploads'));
@@ -38,8 +54,6 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/entrepreneur', entrepreneurRoutes);
-app.use('/api/investor', investorRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/meetings', meetingsRoutes);
 app.use('/api/users', usersRoutes);
@@ -127,7 +141,7 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Socket.IO server initialized for WebRTC signaling');

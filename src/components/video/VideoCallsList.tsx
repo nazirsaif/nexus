@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config/api';
 
 interface VideoCall {
   _id: string;
@@ -51,7 +52,7 @@ export const VideoCallsList: React.FC<VideoCallsListProps> = ({ onCreateCall }) 
   const fetchCalls = async () => {
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch('http://localhost:5000/api/video-calls', {
+      const response = await fetch(`${API_URL}/video-calls`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -88,7 +89,7 @@ export const VideoCallsList: React.FC<VideoCallsListProps> = ({ onCreateCall }) 
 
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch(`http://localhost:5000/api/video-calls/${roomId}`, {
+      const response = await fetch(`${API_URL}/video-calls/${roomId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

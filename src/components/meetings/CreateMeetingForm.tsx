@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { Meeting } from '../../types';
+import { API_URL } from '../../config/api';
 
 interface CreateMeetingFormProps {
   onClose: () => void;
@@ -80,8 +81,8 @@ export const CreateMeetingForm: React.FC<CreateMeetingFormProps> = ({ onClose, o
       
       const isEditing = !!initialData;
       const url = isEditing 
-        ? `http://localhost:5000/api/meetings/${initialData.id}`
-        : 'http://localhost:5000/api/meetings';
+        ? `${API_URL}/meetings/${initialData.id}`
+        : `${API_URL}/meetings`;
       
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',

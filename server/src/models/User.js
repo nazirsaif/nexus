@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -23,6 +22,35 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ['entrepreneur', 'investor'],
     required: true
+  },
+  firstName: {
+    type: String,
+    trim: true
+  },
+  lastName: {
+    type: String,
+    trim: true
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'investor', 'entrepreneur', 'user'],
+    default: 'user'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active'
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  lastLogin: {
+    type: Date
   },
   bio: {
     type: String,
@@ -59,25 +87,23 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
-// Hash password before saving
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+// Update the updatedAt field before saving
+UserSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
 });
 
-// Method to compare passwords
-UserSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+// Index for better query performance
+UserSchema.index({ email: 1 });
+UserSchema.index({ userType: 1 });
+UserSchema.index({ status: 1 });
+UserSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('User', UserSchema);

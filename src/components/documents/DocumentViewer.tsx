@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, X, RotateCw } from 'lucide-react';
+import { API_URL, API_BASE_URL } from '../../config/api';
 
 // Configure PDF.js worker with better compatibility
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -105,7 +106,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/documents/${document._id}/download`, {
+      const response = await fetch(`${API_URL}/documents/${document._id}/download`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -132,7 +133,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
 
   const isPDF = document.mimeType === 'application/pdf';
   const isImage = document.mimeType.startsWith('image/');
-  const fileUrl = `http://localhost:5000${document.fileUrl}`;
+  const fileUrl = `${API_BASE_URL}${document.fileUrl}`;
   
   // Create file object with authentication headers for PDF.js
   const fileObject = isPDF ? {

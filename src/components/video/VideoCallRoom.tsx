@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { VideoCall } from './VideoCall';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config/api';
 
 interface VideoCallData {
   _id: string;
@@ -55,7 +56,7 @@ export const VideoCallRoom: React.FC = () => {
   const fetchCallData = async () => {
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch(`http://localhost:5000/api/video-calls/${roomId}`, {
+      const response = await fetch(`${API_URL}/video-calls/${roomId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -80,7 +81,7 @@ export const VideoCallRoom: React.FC = () => {
 
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch(`http://localhost:5000/api/video-calls/${roomId}/join`, {
+      const response = await fetch(`${API_URL}/video-calls/${roomId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -103,7 +104,7 @@ export const VideoCallRoom: React.FC = () => {
 
     try {
       const token = localStorage.getItem('business_nexus_token');
-      await fetch(`http://localhost:5000/api/video-calls/${roomId}/leave`, {
+      await fetch(`${API_URL}/video-calls/${roomId}/leave`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

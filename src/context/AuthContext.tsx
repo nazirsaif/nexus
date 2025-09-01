@@ -3,6 +3,7 @@ import { User, UserRole, AuthContextType } from '../types';
 import { users } from '../data/users'; // Keep for fallback
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 // Create Auth Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -11,9 +12,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const USER_STORAGE_KEY = 'business_nexus_user';
 const RESET_TOKEN_KEY = 'business_nexus_reset_token';
 const TOKEN_STORAGE_KEY = 'business_nexus_token';
-
-// API URL
-const API_URL = 'http://localhost:5000/api';
 
 // Auth Provider Component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -28,12 +26,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const response = await axios.get(`${API_URL}/auth/me`, {
             headers: {
-              'x-auth-token': token
+              'Authorization': `Bearer ${token}`
             }
           });
           
           // Get user data from response
-          const userData = response.data;
+          const userData = response.data.user;
           
           // Verify user data exists
           if (!userData || (!userData.role && !userData.userType)) {
@@ -49,14 +47,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(normalizedUserData as User);
           
           // Set axios default header for all future requests
-          axios.defaults.headers.common['x-auth-token'] = token;
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } catch (error: unknown) {
           console.error('Error fetching user:', error);
           // Clear auth data on error
           localStorage.removeItem(TOKEN_STORAGE_KEY);
           localStorage.removeItem(USER_STORAGE_KEY);
           // Clear axios default header
-          delete axios.defaults.headers.common['x-auth-token'];
+          delete axios.defaults.headers.common['Authorization'];
         }
       }
       setIsLoading(false);
@@ -73,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem(TOKEN_STORAGE_KEY);
           localStorage.removeItem(USER_STORAGE_KEY);
           setUser(null);
-          delete axios.defaults.headers.common['x-auth-token'];
+          delete axios.defaults.headers.common['Authorization'];
           toast.error('Your session has expired. Please log in again.');
         }
         return Promise.reject(error);
@@ -89,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Real login function that makes an API call
   const login = async (email: string, password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
-    console.log('Attempting to login user:', { email, role });
+    console.log('Attempting to login user:', { email });
     
     try {
       // Log the request being made
@@ -104,38 +102,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Login response received:', response.status);
       console.log('Login response data:', response.data);
+      console.log('Checking requiresTwoFactor:', response.data.requiresTwoFactor);
+      console.log('Response success:', response.data.success);
       
-      const { token, user: userData } = response.data;
+      // Check if 2FA is required
+      if (response.data.requiresTwoFactor) {
+        console.log('2FA required detected! OTP sent to email');
+        console.log('TempToken received:', response.data.tempToken);
+        const error = new Error('2FA verification required. Please check your email for the OTP code.') as any;
+        error.tempToken = response.data.tempToken;
+        console.log('Throwing 2FA error with tempToken:', error.tempToken);
+        throw error;
+      }
+      
+      const { accessToken: token, user: userData } = response.data;
       
       // Verify user data has required fields
       if (!userData || !userData.id) {
         throw new Error('Invalid user data received from server');
       }
       
-      // Check if userType is present instead of role (server uses userType)
-      if (!userData.userType && !userData.role) {
-        throw new Error('User role information missing');
-      }
-      
       // Normalize user data - server returns userType but frontend expects role
       const normalizedUserData = {
         ...userData,
-        role: userData.role || userData.userType
+        role: userData.role || userData.userType || 'user'
       };
       
-      // Set user in state with normalized data
-      setUser(normalizedUserData as User);
-      
-      // Store auth data with normalized user data
+      // Store auth data with normalized user data first
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUserData));
       
       // Set authorization header for future requests
-      axios.defaults.headers.common['x-auth-token'] = token;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // Set user in state with normalized data
+      setUser(normalizedUserData as User);
       
       toast.success('Successfully logged in!');
+      
+      console.log('User state set successfully:', normalizedUserData);
     } catch (error: unknown) {
       console.error('Login error:', error);
+      
+      // Check if this is our custom 2FA error
+      if (error instanceof Error && error.message.includes('2FA verification required')) {
+        console.log('Re-throwing 2FA error for LoginPage to handle');
+        throw error; // Re-throw the 2FA error with tempToken intact
+      }
       
       if (axios.isAxiosError(error)) {
         console.error('API Error Response:', error.response?.data);
@@ -177,7 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Signup response received:', response.status);
       console.log('Signup response data:', response.data);
       
-      const { token, user: userData } = response.data;
+      const { accessToken: token, user: userData } = response.data;
       
       // Verify user data has required fields
       if (!userData || !userData.id) {
@@ -203,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUserData));
       
       // Set authorization header for future requests
-      axios.defaults.headers.common['x-auth-token'] = token;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       toast.success('Account created successfully!');
     } catch (error: unknown) {
@@ -284,7 +297,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     
     // Clear authorization header
-    delete axios.defaults.headers.common['x-auth-token'];
+    delete axios.defaults.headers.common['Authorization'];
     
     toast.success('Logged out successfully');
   };
@@ -310,7 +323,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profileUpdateData,
         {
           headers: {
-            'x-auth-token': token
+            'Authorization': `Bearer ${token}`
           }
         }
       );
@@ -352,7 +365,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const response = await axios.get(`${API_URL}/profile`, {
         headers: {
-          'x-auth-token': token
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -373,7 +386,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const response = await axios.put(`${API_URL}/profile`, profileData, {
         headers: {
-          'x-auth-token': token
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -386,6 +399,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Update user state
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+  };
+
   const value = {
     user,
     login,
@@ -396,6 +415,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateProfile,
     getExtendedProfile,
     updateExtendedProfile,
+    updateUser,
     isAuthenticated: !!user,
     isLoading
   };

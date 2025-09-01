@@ -4,6 +4,7 @@ import DocumentUpload from './DocumentUpload';
 import DocumentsList from './DocumentsList';
 import DocumentViewer from './DocumentViewer';
 import ESignature from './ESignature';
+import { API_URL } from '../../config/api';
 
 interface Document {
   _id: string;
@@ -63,7 +64,7 @@ const Documents: React.FC = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5000/api/documents', {
+      const response = await fetch(`${API_URL}/documents`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -113,7 +114,7 @@ const Documents: React.FC = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
+      const response = await fetch(`${API_URL}/documents/${documentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -142,7 +143,7 @@ const Documents: React.FC = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/documents/${document._id}`, {
+      const response = await fetch(`${API_URL}/documents/${document._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

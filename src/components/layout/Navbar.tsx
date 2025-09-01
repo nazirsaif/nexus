@@ -19,19 +19,13 @@ export const Navbar: React.FC = () => {
     navigate('/login');
   };
   
-  // User dashboard route based on role
-  const dashboardRoute = user?.role === 'entrepreneur' 
-    ? '/dashboard/entrepreneur' 
-    : '/dashboard/investor';
-  
-  // User profile route based on role and ID
-  const profileRoute = user 
-    ? `/profile/${user.role === 'entrepreneur' ? 'entrepreneur' : 'investor'}/${user.id}` 
-    : '/login';
+  // Simplified navigation without role-based logic
+  const dashboardRoute = '/dashboard';
+  const profileRoute = user ? `/profile/edit` : '/login';
   
   const navLinks = [
     {
-      icon: user?.role === 'entrepreneur' ? <Building2 size={18} /> : <CircleDollarSign size={18} />,
+      icon: <Building2 size={18} />,
       text: 'Dashboard',
       path: dashboardRoute,
     },
@@ -94,7 +88,7 @@ export const Navbar: React.FC = () => {
                 
                 <Link to={profileRoute} className="flex items-center space-x-2 ml-2">
                   <Avatar
-                    src={user.avatarUrl}
+                    src={user.avatarUrl || ''}
                     alt={user.name}
                     size="sm"
                     status={user.isOnline ? 'online' : 'offline'}
@@ -138,7 +132,7 @@ export const Navbar: React.FC = () => {
               <>
                 <div className="flex items-center space-x-3 px-3 py-2">
                   <Avatar
-                    src={user.avatarUrl}
+                    src={user.avatarUrl || ''}
                     alt={user.name}
                     size="sm"
                     status={user.isOnline ? 'online' : 'offline'}

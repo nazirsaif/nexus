@@ -14,9 +14,6 @@ module.exports = async (req, res, next) => {
       token = token.slice(7).trim();
     }
     
-    // Log token for debugging
-    console.log('Token received:', token);
-
     // Check if no token
     if (!token) {
       return res.status(401).json({ 
@@ -27,6 +24,13 @@ module.exports = async (req, res, next) => {
     try {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'nexus-secret-key');
+      
+      // Check if decoded token has userId
+      if (!decoded.userId) {
+        return res.status(401).json({ 
+          message: 'Invalid token format. No user ID found.'
+        });
+      }
       
       // Check if token has expired
       const currentTime = Math.floor(Date.now() / 1000);

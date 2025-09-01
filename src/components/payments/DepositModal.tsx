@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { CreditCard, DollarSign, X } from 'lucide-react';
+import { CreditCard, DollarSign, X, AlertTriangle } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select, SelectOption } from '../ui/Select';
 import { Card, CardBody } from '../ui/Card';
+import { API_URL } from '../../config/api';
+
 import { useAuth } from '../../context/AuthContext';
 
 interface DepositModalProps {
@@ -43,22 +45,35 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onS
 
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch('/api/payments/deposit', {
+      console.log('🔍 [DepositModal] Starting deposit request...');
+      console.log('🔍 [DepositModal] Token exists:', !!token);
+      console.log('🔍 [DepositModal] Request URL:', `${API_URL}/payments/deposit`);
+      console.log('🔍 [DepositModal] Request payload:', {
+        amount: parseFloat(amount),
+        paymentMethod,
+        description: `Deposit of $${amount} via ${paymentMethod}`
+      });
+      
+      const response = await fetch(`${API_URL}/payments/deposit`, {
         method: 'POST',
         headers: token ? {
-          'Content-Type': 'application/json',
-          'x-auth-token': token
-        } : {
-          'Content-Type': 'application/json'
-        },
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${token}`
+         } : {
+           'Content-Type': 'application/json'
+         },
         body: JSON.stringify({
           amount: parseFloat(amount),
           paymentMethod,
           description: `Deposit of $${amount} via ${paymentMethod}`
         })
       });
+      
+      console.log('🔍 [DepositModal] Response status:', response.status);
+      console.log('🔍 [DepositModal] Response ok:', response.ok);
 
       const data = await response.json();
+      console.log('🔍 [DepositModal] Response data:', data);
 
       if (response.ok) {
         if (paymentMethod === 'stripe' && data.clientSecret) {
@@ -81,6 +96,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onS
         setLoading(false);
       }
     } catch (error) {
+      console.error('❌ [DepositModal] Network error:', error);
+      console.error('❌ [DepositModal] Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown Error',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setError('Network error. Please try again.');
       setLoading(false);
     }

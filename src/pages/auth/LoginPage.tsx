@@ -5,6 +5,9 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { UserRole } from '../../types';
+import { TwoFactorVerification } from '../../components/auth/TwoFactorVerification';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,9 +15,12 @@ export const LoginPage: React.FC = () => {
   const [role, setRole] = useState<UserRole>('entrepreneur');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { login } = useAuth();
+  const [showTwoFactor, setShowTwoFactor] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const { login, user, isAuthenticated, updateUser } = useAuth();
   const navigate = useNavigate();
+  
+
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +29,61 @@ export const LoginPage: React.FC = () => {
     
     try {
       await login(email, password, role);
-      // Redirect based on user role
-      navigate(role === 'entrepreneur' ? '/dashboard/entrepreneur' : '/dashboard/investor');
-    } catch (err) {
-      setError((err as Error).message);
+      // Navigate to dashboard after successful login
+      navigate('/dashboard', { replace: true });
+    } catch (err: any) {
+      console.log('Login error caught:', err);
+      console.log('Error message:', err.message);
+      console.log('Error tempToken:', err.tempToken);
+      
+      const errorMessage = (err as Error).message;
+      if (errorMessage.includes('2FA verification required')) {
+        console.log('2FA required detected, switching to 2FA screen');
+        // Extract temp token from error
+        setShowTwoFactor(true);
+        setTempToken(err.tempToken || '');
+        console.log('showTwoFactor set to:', true);
+        console.log('tempToken set to:', err.tempToken || '');
+      } else {
+        setError(errorMessage);
+      }
+    } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTwoFactorSuccess = (accessToken: string, userData: any) => {
+    // Use the same logic as successful login in AuthContext
+    const TOKEN_STORAGE_KEY = 'business_nexus_token';
+    const USER_STORAGE_KEY = 'business_nexus_user';
+    
+    // Normalize user data
+    const normalizedUserData = {
+      ...userData,
+      role: userData.role || userData.userType || 'user'
+    };
+    
+    // Store auth data
+    localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUserData));
+    
+    // Set authorization header for future requests
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    
+    // Update AuthContext state
+    updateUser(normalizedUserData);
+    
+    // Show success message
+    toast.success('Successfully logged in!');
+    
+    // Navigate to dashboard
+    navigate('/dashboard', { replace: true });
+  };
+
+  const handleTwoFactorCancel = () => {
+    setShowTwoFactor(false);
+    setTempToken('');
+    setError(null);
   };
   
   // For demo purposes, pre-filled credentials
@@ -43,6 +98,22 @@ export const LoginPage: React.FC = () => {
     setRole(userRole);
   };
   
+  // Show 2FA verification if required
+  console.log('Rendering LoginPage, showTwoFactor:', showTwoFactor);
+  if (showTwoFactor) {
+    console.log('Rendering TwoFactorVerification component');
+    return (
+       <TwoFactorVerification
+         email={email}
+         password={password}
+         userType={role}
+         tempToken={tempToken}
+         onVerificationSuccess={handleTwoFactorSuccess}
+         onCancel={handleTwoFactorCancel}
+       />
+     );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">

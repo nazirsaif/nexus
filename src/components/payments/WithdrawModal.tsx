@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ArrowUpCircle, DollarSign, X, AlertTriangle } from 'lucide-react';
+import { ArrowUpCircle, DollarSign, X, AlertTriangle, CreditCard, Building } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select, SelectOption } from '../ui/Select';
 import { Card, CardBody } from '../ui/Card';
+import { API_URL } from '../../config/api';
+
 import { useAuth } from '../../context/AuthContext';
 
 interface WithdrawModalProps {
@@ -56,14 +58,18 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, o
 
     try {
       const token = localStorage.getItem('business_nexus_token');
-      const response = await fetch('/api/payments/withdraw', {
+      console.log('🔍 [WithdrawModal] Starting withdraw request...');
+      console.log('🔍 [WithdrawModal] Token exists:', !!token);
+      console.log('🔍 [WithdrawModal] Request URL:', `${API_URL}/payments/withdraw`);
+      
+      const response = await fetch(`${API_URL}/payments/withdraw`, {
         method: 'POST',
         headers: token ? {
-          'Content-Type': 'application/json',
-          'x-auth-token': token
-        } : {
-          'Content-Type': 'application/json'
-        },
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${token}`
+         } : {
+           'Content-Type': 'application/json'
+         },
         body: JSON.stringify({
           amount: parseFloat(amount),
           withdrawMethod,
@@ -71,8 +77,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, o
           description: `Withdrawal of $${amount} via ${withdrawMethod}`
         })
       });
+      
+      console.log('🔍 [WithdrawModal] Response status:', response.status);
+      console.log('🔍 [WithdrawModal] Response ok:', response.ok);
 
       const data = await response.json();
+      console.log('🔍 [WithdrawModal] Response data:', data);
 
       if (response.ok) {
         onSuccess();
@@ -85,6 +95,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, o
         setLoading(false);
       }
     } catch (error) {
+      console.error('❌ [WithdrawModal] Network error:', error);
+      console.error('❌ [WithdrawModal] Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown Error',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setError('Network error. Please try again.');
       setLoading(false);
     }

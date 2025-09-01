@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
-import io, { Socket } from 'socket.io-client';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { SOCKET_URL } from '../config/api';
 
-interface Participant {
+export interface Participant {
   id: string;
   name: string;
   stream?: MediaStream;
@@ -48,7 +49,7 @@ export const VideoCallProvider: React.FC<VideoCallProviderProps> = ({ children }
   // Initialize Socket.IO connection
   useEffect(() => {
     if (user) {
-      const newSocket = io('http://localhost:5000', {
+      const newSocket = io(SOCKET_URL, {
         auth: {
           token: localStorage.getItem('business_nexus_token')
         }

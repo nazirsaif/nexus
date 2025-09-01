@@ -4,6 +4,13 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
+const { 
+  validatePayment, 
+  validateTransfer, 
+  validateWithdrawal,
+  handleValidationErrors 
+} = require('../middleware/validation');
+const { paymentLimiter, transferLimiter } = require('../middleware/security');
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
@@ -11,7 +18,11 @@ router.use(authMiddleware);
 // @route   POST /api/payments/deposit
 // @desc    Create a deposit transaction
 // @access  Private
-router.post('/deposit', async (req, res) => {
+router.post('/deposit', 
+  paymentLimiter,
+  validatePayment,
+  handleValidationErrors,
+  async (req, res) => {
   try {
     const { amount, paymentMethod = 'stripe' } = req.body;
 
@@ -24,7 +35,7 @@ router.post('/deposit', async (req, res) => {
 
     // Create transaction record
     const transaction = new Transaction({
-      userId: req.user.id,
+      userId: req.user._id,
       type: 'deposit',
       amount: parseFloat(amount),
       description: `Deposit of $${amount}`,
@@ -39,7 +50,7 @@ router.post('/deposit', async (req, res) => {
           amount: Math.round(amount * 100), // Convert to cents
           currency: 'usd',
           metadata: {
-            userId: req.user.id,
+            userId: req.user._id,
             transactionId: transaction._id.toString(),
             type: 'deposit'
           }
@@ -88,7 +99,11 @@ router.post('/deposit', async (req, res) => {
 // @route   POST /api/payments/withdraw
 // @desc    Create a withdrawal transaction
 // @access  Private
-router.post('/withdraw', async (req, res) => {
+router.post('/withdraw', 
+  paymentLimiter,
+  validateWithdrawal,
+  handleValidationErrors,
+  async (req, res) => {
   try {
     const { amount, paymentMethod = 'stripe' } = req.body;
 
@@ -103,7 +118,7 @@ router.post('/withdraw', async (req, res) => {
     // For now, we'll create the transaction as pending
 
     const transaction = new Transaction({
-      userId: req.user.id,
+      userId: req.user._id,
       type: 'withdraw',
       amount: parseFloat(amount),
       description: `Withdrawal of $${amount}`,
@@ -140,9 +155,13 @@ router.post('/withdraw', async (req, res) => {
 });
 
 // @route   POST /api/payments/transfer
-// @desc    Create a transfer transaction between users
+// @desc    Transfer money between users
 // @access  Private
-router.post('/transfer', async (req, res) => {
+router.post('/transfer', 
+  transferLimiter,
+  validateTransfer,
+  handleValidationErrors,
+  async (req, res) => {
   try {
     const { amount, recipientId, description } = req.body;
 
@@ -160,7 +179,7 @@ router.post('/transfer', async (req, res) => {
       });
     }
 
-    if (recipientId === req.user.id) {
+    if (recipientId === req.user._id.toString()) {
       return res.status(400).json({
         success: false,
         message: 'Cannot transfer to yourself'
@@ -176,9 +195,9 @@ router.post('/transfer', async (req, res) => {
       });
     }
 
-    // Create transfer transaction
+    // Create transaction record
     const transaction = new Transaction({
-      userId: req.user.id,
+      userId: req.user._id,
       recipientId,
       type: 'transfer',
       amount: parseFloat(amount),
@@ -219,13 +238,14 @@ router.post('/transfer', async (req, res) => {
 // @route   GET /api/payments/transactions
 // @desc    Get user's transaction history
 // @access  Private
-router.get('/transactions', async (req, res) => {
+router.get('/transactions', 
+  async (req, res) => {
   try {
     const { page = 1, limit = 10, type, status } = req.query;
     const query = {
       $or: [
-        { userId: req.user.id },
-        { recipientId: req.user.id }
+        { userId: req.user._id },
+        { recipientId: req.user._id }
       ]
     };
 
@@ -265,7 +285,8 @@ router.get('/transactions', async (req, res) => {
 // @route   GET /api/payments/transactions/:id
 // @desc    Get specific transaction details
 // @access  Private
-router.get('/transactions/:id', async (req, res) => {
+router.get('/transactions/:id', 
+  async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id)
       .populate('userId', 'name email')
@@ -280,8 +301,8 @@ router.get('/transactions/:id', async (req, res) => {
 
     // Check if user has access to this transaction
     const hasAccess = 
-      transaction.userId._id.toString() === req.user.id ||
-      (transaction.recipientId && transaction.recipientId._id.toString() === req.user.id);
+      transaction.userId._id.toString() === req.user._id.toString() ||
+      (transaction.recipientId && transaction.recipientId._id.toString() === req.user._id.toString());
 
     if (!hasAccess) {
       return res.status(403).json({

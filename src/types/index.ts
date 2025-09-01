@@ -1,12 +1,12 @@
-export type UserRole = 'entrepreneur' | 'investor';
+export type UserRole = 'entrepreneur' | 'investor' | 'user';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
-  avatarUrl: string;
-  bio: string;
+  role?: UserRole;
+  avatarUrl?: string;
+  bio?: string;
   location?: string;
   website?: string;
   social?: {
@@ -16,6 +16,8 @@ export interface User {
   };
   isOnline?: boolean;
   createdAt: string;
+  twoFactorEnabled?: boolean;
+  emailVerified?: boolean;
 }
 
 export interface Entrepreneur extends User {
@@ -110,6 +112,7 @@ export interface AuthContextType {
   updateProfile: (userId: string, updates: Partial<User>, extendedProfileData?: any) => Promise<void>;
   getExtendedProfile?: () => Promise<any>;
   updateExtendedProfile?: (profileData: any) => Promise<any>;
+  updateUser: (user: User) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

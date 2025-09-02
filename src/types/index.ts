@@ -107,6 +107,7 @@ export interface AuthContextType {
   login: (email: string, password: string, role: UserRole) => Promise<void>;
   register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => void;
+  forceLogout: () => void;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   updateProfile: (userId: string, updates: Partial<User>, extendedProfileData?: any) => Promise<void>;

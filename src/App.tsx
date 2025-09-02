@@ -16,11 +16,13 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 // Dashboard Pages
 import { EntrepreneurDashboard } from './pages/dashboard/EntrepreneurDashboard';
 import { InvestorDashboard } from './pages/dashboard/InvestorDashboard';
+import { DashboardRedirect } from './components/dashboard/DashboardRedirect';
 
 // Profile Pages
 import { EntrepreneurProfile } from './pages/profile/EntrepreneurProfile';
 import { InvestorProfile } from './pages/profile/InvestorProfile';
 import { EditProfilePage } from './pages/profile/EditProfilePage';
+import { MyPortfolio } from './pages/profile/MyPortfolio';
 
 // Feature Pages
 import { InvestorsPage } from './pages/investors/InvestorsPage';
@@ -55,7 +57,7 @@ function App() {
           
           {/* Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<EntrepreneurDashboard />} />
+            <Route index element={<DashboardRedirect />} />
             <Route path="entrepreneur" element={<EntrepreneurDashboard />} />
             <Route path="investor" element={<InvestorDashboard />} />
           </Route>
@@ -65,6 +67,10 @@ function App() {
             <Route path="entrepreneur/:id" element={<EntrepreneurProfile />} />
             <Route path="investor/:id" element={<InvestorProfile />} />
             <Route path="edit" element={<EditProfilePage />} />
+          </Route>
+          
+          <Route path="/my-portfolio" element={<DashboardLayout />}>
+            <Route index element={<MyPortfolio />} />
           </Route>
           
           {/* Feature Routes */}

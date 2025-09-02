@@ -17,7 +17,6 @@ const { authLimiter, generalLimiter } = require('../middleware/security');
 router.post('/signup', 
   authLimiter,
   validateUserRegistration,
-  handleValidationErrors,
   authController.signup
 );
 

@@ -126,6 +126,12 @@ export const MeetingsPage: React.FC = () => {
   const handleUpdateMeetingStatus = async (status: 'accepted' | 'rejected' | 'cancelled') => {
     if (!selectedMeeting) return;
     
+    console.log('=== DEBUG: Meeting Status Update ===');
+    console.log('Status:', status);
+    console.log('Selected Meeting:', selectedMeeting);
+    console.log('Meeting ID:', selectedMeeting.id);
+    console.log('User:', user);
+    
     try {
       let endpoint = '';
       let method = 'PATCH';
@@ -140,6 +146,9 @@ export const MeetingsPage: React.FC = () => {
         endpoint = `${API_URL}/meetings/${selectedMeeting.id}/status`;
         body = JSON.stringify({ status });
       }
+      
+      console.log('API Endpoint:', endpoint);
+      console.log('Request body:', body);
 
       const response = await fetch(endpoint, {
         method,
@@ -150,8 +159,12 @@ export const MeetingsPage: React.FC = () => {
         ...(body && { body }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('Error response data:', errorData);
         
         // Handle conflict errors specifically
         if (response.status === 409) {
@@ -164,6 +177,8 @@ export const MeetingsPage: React.FC = () => {
         
         throw new Error(errorData.message || 'Failed to update meeting status');
       }
+      
+      console.log('Meeting status updated successfully');
 
       setSelectedMeeting(null);
       fetchMeetings();

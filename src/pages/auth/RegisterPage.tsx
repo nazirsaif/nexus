@@ -7,7 +7,8 @@ import { Input } from '../../components/ui/Input';
 import { UserRole } from '../../types';
 
 export const RegisterPage: React.FC = () => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,7 +32,8 @@ export const RegisterPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await register(name, email, password, role);
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      await register(fullName, email, password, role);
       // Redirect based on user role
       navigate(role === 'entrepreneur' ? '/dashboard/entrepreneur' : '/dashboard/investor');
     } catch (err) {
@@ -103,10 +105,20 @@ export const RegisterPage: React.FC = () => {
             </div>
             
             <Input
-              label="Full name"
+              label="First name"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+              fullWidth
+              startAdornment={<User size={18} />}
+            />
+            
+            <Input
+              label="Last name"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               required
               fullWidth
               startAdornment={<User size={18} />}

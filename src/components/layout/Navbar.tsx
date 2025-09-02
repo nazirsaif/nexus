@@ -19,8 +19,10 @@ export const Navbar: React.FC = () => {
     navigate('/login');
   };
   
-  // Simplified navigation without role-based logic
-  const dashboardRoute = '/dashboard';
+  // Role-based navigation
+  const dashboardRoute = user ? 
+    (user.role === 'entrepreneur' ? '/dashboard/entrepreneur' : '/dashboard/investor') : 
+    '/dashboard';
   const profileRoute = user ? `/profile/edit` : '/login';
   
   const navLinks = [

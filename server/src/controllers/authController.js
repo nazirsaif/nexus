@@ -7,19 +7,27 @@ const { sanitizeInput } = require('../middleware/validation');
 // Register a new user
 exports.signup = async (req, res) => {
   try {
-    console.log('Signup request received:', req.body);
+    console.log('=== SIGNUP REQUEST DEBUG ===');
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('Request body values:', req.body);
+    console.log('firstName:', req.body.firstName, 'length:', req.body.firstName?.length);
+    console.log('lastName:', req.body.lastName, 'length:', req.body.lastName?.length);
+    console.log('email:', req.body.email);
+    console.log('userType:', req.body.userType);
+    console.log('password length:', req.body.password?.length);
+    console.log('==============================');
+    
     let { name, email, password, userType, firstName, lastName } = req.body;
 
     // Sanitize inputs
-    name = sanitizeInput(name);
-    firstName = sanitizeInput(firstName || name?.split(' ')[0] || '');
-    lastName = sanitizeInput(lastName || name?.split(' ').slice(1).join(' ') || '');
+    firstName = sanitizeInput(firstName || '');
+    lastName = sanitizeInput(lastName || '');
     email = email?.toLowerCase().trim();
     userType = userType?.toLowerCase();
 
     // Validate required fields
-    if (!name || !email || !password || !userType) {
-      console.log('Missing required fields:', { name, email, password: password ? 'provided' : 'missing', userType });
+    if (!firstName || !lastName || !email || !password || !userType) {
+      console.log('Missing required fields:', { firstName, lastName, email, password: password ? 'provided' : 'missing', userType });
       return res.status(400).json({ 
         success: false,
         message: 'All fields are required' 
@@ -50,8 +58,9 @@ exports.signup = async (req, res) => {
     const hashedPassword = await hashPassword(password);
 
     // Create new user
+    const fullName = `${firstName} ${lastName}`;
     user = new User({
-      name,
+      name: fullName,
       firstName,
       lastName,
       email,
@@ -63,7 +72,7 @@ exports.signup = async (req, res) => {
       status: 'active'
     });
 
-    console.log('Attempting to save new user:', { name, email, userType });
+    console.log('Attempting to save new user:', { name: fullName, email, userType });
     
     // Save user to database
     await user.save();
@@ -268,6 +277,7 @@ exports.getCurrentUser = async (req, res) => {
         message: 'User not found' 
       });
     }
+
     res.json({
       success: true,
       user: {

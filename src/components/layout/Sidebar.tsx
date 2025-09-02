@@ -38,7 +38,7 @@ export const Sidebar: React.FC = () => {
   // Define sidebar items based on user role
   const entrepreneurItems = [
     { to: '/dashboard/entrepreneur', icon: <Home size={20} />, text: 'Dashboard' },
-    { to: '/profile/entrepreneur/' + user.id, icon: <Building2 size={20} />, text: 'My Startup' },
+    { to: '/my-portfolio', icon: <Building2 size={20} />, text: 'My Startup' },
     { to: '/investors', icon: <CircleDollarSign size={20} />, text: 'Find Investors' },
     { to: '/payments', icon: <CreditCard size={20} />, text: 'Payments' },
     { to: '/meetings', icon: <Calendar size={20} />, text: 'Meetings' },
@@ -50,7 +50,7 @@ export const Sidebar: React.FC = () => {
   
   const investorItems = [
     { to: '/dashboard/investor', icon: <Home size={20} />, text: 'Dashboard' },
-    { to: '/profile/investor/' + user.id, icon: <CircleDollarSign size={20} />, text: 'My Portfolio' },
+    { to: '/my-portfolio', icon: <CircleDollarSign size={20} />, text: 'My Portfolio' },
     { to: '/entrepreneurs', icon: <Users size={20} />, text: 'Find Startups' },
     { to: '/payments', icon: <CreditCard size={20} />, text: 'Payments' },
     { to: '/meetings', icon: <Calendar size={20} />, text: 'Meetings' },

@@ -18,12 +18,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Clear all authentication data
+  const clearAuthData = (): void => {
+    // Clear user state
+    setUser(null);
+    
+    // Clear all possible auth-related items from localStorage
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(RESET_TOKEN_KEY);
+    
+    // Clear authorization header
+    delete axios.defaults.headers.common['Authorization'];
+  };
+
   // Check for stored user on initial load
   useEffect(() => {
     const fetchCurrentUser = async () => {
+      // One-time cleanup: Clear any potentially corrupted auth data
+      const authVersion = localStorage.getItem('auth_version');
+      if (!authVersion || authVersion !== '1.0') {
+        console.log('Clearing potentially corrupted authentication data...');
+        clearAuthData();
+        localStorage.setItem('auth_version', '1.0');
+        setIsLoading(false);
+        return;
+      }
+      
       const token = localStorage.getItem(TOKEN_STORAGE_KEY);
       if (token) {
         try {
+          // Validate token format before making request
+          if (!token || token.split('.').length !== 3) {
+            throw new Error('Invalid token format');
+          }
+          
           const response = await axios.get(`${API_URL}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -50,11 +79,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } catch (error: unknown) {
           console.error('Error fetching user:', error);
-          // Clear auth data on error
+          // Clear auth data on error - this will force re-login
           localStorage.removeItem(TOKEN_STORAGE_KEY);
           localStorage.removeItem(USER_STORAGE_KEY);
           // Clear axios default header
           delete axios.defaults.headers.common['Authorization'];
+          // Show user-friendly message
+          toast.error('Your session has expired. Please log in again.');
         }
       }
       setIsLoading(false);
@@ -67,11 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       response => response,
       error => {
         if (error.response && error.response.status === 401) {
-          // Auto logout on 401 Unauthorized
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
-          localStorage.removeItem(USER_STORAGE_KEY);
-          setUser(null);
-          delete axios.defaults.headers.common['Authorization'];
+          // Auto logout on 401 Unauthorized using forceLogout
+          clearAuthData();
           toast.error('Your session has expired. Please log in again.');
         }
         return Promise.reject(error);
@@ -176,12 +204,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('Attempting to register user:', { name, email, role });
     
     try {
+      // Split name into firstName and lastName for backend validation
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      let lastName = nameParts.slice(1).join(' ').trim();
+      
+      // Ensure both firstName and lastName meet validation requirements (min 2 chars)
+      if (firstName.length < 2) {
+        throw new Error('Name must be at least 2 characters long');
+      }
+      
+      if (!lastName || lastName.length < 2) {
+        lastName = 'User'; // Default fallback that meets validation
+      }
+      
       // Log the request being made
       console.log('Making signup request to:', `${API_URL}/auth/signup`);
-      console.log('With data:', { name, email, password: '***', userType: role });
+      console.log('With data:', { firstName, lastName, email, password: '***', userType: role });
       
       const response = await axios.post(`${API_URL}/auth/signup`, {
-        name,
+        firstName,
+        lastName,
         email,
         password,
         userType: role
@@ -289,17 +332,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = (): void => {
-    // Clear user state
-    setUser(null);
-    
-    // Clear local storage
-    localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    
-    // Clear authorization header
-    delete axios.defaults.headers.common['Authorization'];
-    
+    clearAuthData();
     toast.success('Logged out successfully');
+  };
+
+  // Force logout and clear corrupted data
+  const forceLogout = (): void => {
+    clearAuthData();
+    toast.error('Session expired. Please log in again.');
   };
 
   // Update user profile using the secure API endpoint
@@ -410,6 +450,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     logout,
+    forceLogout,
     forgotPassword,
     resetPassword,
     updateProfile,

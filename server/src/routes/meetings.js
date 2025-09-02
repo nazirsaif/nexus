@@ -55,7 +55,7 @@ const checkMeetingConflicts = async (startTime, endTime, organizerId, participan
 // Get all meetings
 router.get('/', async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     
     // Find meetings where the user is either the organizer or a participant
     const meetings = await Meeting.find({
@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { title, description, startTime, endTime, location, participants } = req.body;
-    const organizerId = req.user._id;
+    const organizerId = req.user._id.toString();
     
     // Validate required fields
     if (!title || !startTime || !endTime) {
@@ -144,7 +144,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // Check if user has access to this meeting
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     const hasAccess = meeting.organizerId === userId || 
                      meeting.participants.some(p => p.userId === userId);
     
@@ -163,7 +163,7 @@ router.get('/:id', async (req, res) => {
 router.patch('/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     
     if (!status) {
       return res.status(400).json({ message: 'Status is required' });
@@ -197,7 +197,7 @@ router.patch('/:id/status', async (req, res) => {
 // Accept meeting invitation
 router.patch('/:id/accept', async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     const meeting = await Meeting.findById(req.params.id);
     
     if (!meeting) {
@@ -247,7 +247,7 @@ router.patch('/:id/accept', async (req, res) => {
 // Reject meeting invitation
 router.patch('/:id/reject', async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     const meeting = await Meeting.findById(req.params.id);
     
     if (!meeting) {
@@ -275,7 +275,7 @@ router.patch('/:id/reject', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { title, description, startTime, endTime, location, participants } = req.body;
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     
     const meeting = await Meeting.findById(req.params.id);
     
@@ -341,7 +341,7 @@ router.put('/:id', async (req, res) => {
 // Delete a meeting
 router.delete('/:id', async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     const meeting = await Meeting.findById(req.params.id);
     
     if (!meeting) {

@@ -20,6 +20,13 @@ module.exports = async (req, res, next) => {
         message: 'Access denied. No authentication token provided.'
       });
     }
+    
+    // Validate token format (JWT should have 3 parts separated by dots)
+    if (token.split('.').length !== 3) {
+      return res.status(401).json({ 
+        message: 'Invalid token format.'
+      });
+    }
 
     try {
       // Verify token

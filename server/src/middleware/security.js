@@ -105,6 +105,8 @@ const corsOptions = {
     
     const allowedOrigins = [
       'http://localhost:3000',
+      'http://localhost:5002',
+      'http://localhost:5003',
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:8080',

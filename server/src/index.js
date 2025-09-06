@@ -52,6 +52,14 @@ app.use('/uploads', express.static('uploads'));
 // Connect to MongoDB
 connectDB();
 
+// Swagger API Documentation
+const { swaggerUi, specs } = require('./config/swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Nexus API Documentation'
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);

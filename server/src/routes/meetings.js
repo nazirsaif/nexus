@@ -52,6 +52,61 @@ const checkMeetingConflicts = async (startTime, endTime, organizerId, participan
   return conflicts;
 };
 
+/**
+ * @swagger
+ * /meetings:
+ *   get:
+ *     summary: Get all meetings for the authenticated user
+ *     tags: [Meetings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [scheduled, cancelled, completed]
+ *         description: Filter meetings by status
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter meetings from this date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter meetings until this date
+ *     responses:
+ *       200:
+ *         description: Meetings retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Meeting'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Get all meetings
 router.get('/', async (req, res) => {
   try {
@@ -72,6 +127,88 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /meetings:
+ *   post:
+ *     summary: Create a new meeting
+ *     tags: [Meetings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - startTime
+ *               - endTime
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: Meeting title
+ *                 example: Investment Discussion
+ *               description:
+ *                 type: string
+ *                 description: Meeting description
+ *                 example: Discussing potential investment opportunities
+ *               startTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Meeting start time
+ *                 example: 2024-01-15T10:00:00Z
+ *               endTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Meeting end time
+ *                 example: 2024-01-15T11:00:00Z
+ *               location:
+ *                 type: string
+ *                 description: Meeting location
+ *                 example: Conference Room A
+ *               participants:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of participant user IDs
+ *                 example: ["60d5ecb74b24a1234567890a"]
+ *     responses:
+ *       201:
+ *         description: Meeting created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Meeting created successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/Meeting'
+ *       400:
+ *         description: Validation error or meeting conflict
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Create a new meeting
 router.post('/', async (req, res) => {
   try {
@@ -194,6 +331,63 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /meetings/{id}/accept:
+ *   patch:
+ *     summary: Accept a meeting invitation
+ *     tags: [Meetings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Meeting ID
+ *         example: 60d5ecb74b24a1234567890a
+ *     responses:
+ *       200:
+ *         description: Meeting invitation accepted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Meeting invitation accepted
+ *                 data:
+ *                   $ref: '#/components/schemas/Meeting'
+ *       400:
+ *         description: Invalid request or already responded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Meeting not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Accept meeting invitation
 router.patch('/:id/accept', async (req, res) => {
   try {
@@ -244,6 +438,63 @@ router.patch('/:id/accept', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /meetings/{id}/reject:
+ *   patch:
+ *     summary: Reject a meeting invitation
+ *     tags: [Meetings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Meeting ID
+ *         example: 60d5ecb74b24a1234567890a
+ *     responses:
+ *       200:
+ *         description: Meeting invitation rejected successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Meeting invitation rejected
+ *                 data:
+ *                   $ref: '#/components/schemas/Meeting'
+ *       400:
+ *         description: Invalid request or already responded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Meeting not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Reject meeting invitation
 router.patch('/:id/reject', async (req, res) => {
   try {
